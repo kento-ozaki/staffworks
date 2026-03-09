@@ -1,0 +1,42 @@
+/* globals.css - mobile-first base styles */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: #006284;
+  color: #111;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea { font: inherit; }
+
+button { cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+input, select, textarea {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+textarea { resize: vertical; }
+
+.sw-container {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.sw-card {
+  border: 1px solid #eee;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.sw-muted { color: #555; font-size: 12px; }
