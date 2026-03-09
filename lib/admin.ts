@@ -1,4 +1,3 @@
-// src/lib/admin.ts
 import { apiFetch } from "./api"
 import type { User, Role } from "./auth"
 
