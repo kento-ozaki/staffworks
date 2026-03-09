@@ -33,8 +33,8 @@ const SIDE_NAV: SideNavItem[] = [
   { key: "page6", label: "オンライン", icon: "navi_zoom.svg", maintenance: true },
   { key: "page7", label: "シフト希望提出", href: "/shifts/submit/", icon: "navi_shift_submissions.svg" },
   { key: "page8", label: "シフト管理", href: "/shifts/manage/" ,icon: "navi_shift_manage.svg", roles: ["admin", "leader"] },
-  { key: "page9", label: "アカウント管理", href: "/admin/users/", icon: "account_manage.svg", roles: ["admin"] },
-  { key: "page10", label: "アプリ設定", href: "/admin/settings/notices/", icon: "app_setting.svg", roles: ["admin"] },
+  { key: "page9", label: "アカウント管理", href: "/admin/users/", icon: "navi_account_manage.svg", roles: ["admin"] },
+  { key: "page10", label: "アプリ設定", href: "/admin/settings/notices/", icon: "navi_app_setting.svg", roles: ["admin"] },
 ]
 
 function isAuthFreePath(pathname: string): boolean {
