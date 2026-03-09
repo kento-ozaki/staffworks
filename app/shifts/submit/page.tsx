@@ -2,41 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { me, type User } from "@/lib/auth"
+import { apiFetch } from "@/lib/api"
+import type { ApiNg } from "@/lib/api"
+import { toUserMessage } from "@/lib/errors"
 
-// ── 型（変更なし） ─────────────────────────────────────────────
-type Me     = { id: number; role: string; username: string }
-type ApiOk<T> = { ok: true } & T
-type SlotRow  = { id: string; date: string; start: string; end: string; note: string }
+// ── 型 ────────────────────────────────────────────────────────
+type SlotRow = { id: string; date: string; start: string; end: string; note: string }
 
-// ── API（変更なし） ────────────────────────────────────────────
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "/app/staffworks/api").replace(/\/$/, "")
-
-function apiUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path
-  const filename = path.split("?")[0].split("#")[0].split("/").filter(Boolean).pop() || path
-  const qs = path.includes("?") ? path.slice(path.indexOf("?")) : ""
-  return `${API_BASE}/${filename}${qs}`
-}
-async function apiGet<T>(path: string): Promise<ApiOk<T>> {
-  const res = await fetch(apiUrl(path), { credentials: "include" })
-  const ct = res.headers.get("content-type") || "", text = await res.text()
-  if (res.status === 401) throw new Error("unauthorized")
-  if (!ct.includes("application/json")) throw new Error(`API returned non-JSON (${res.status}): ${text.slice(0,180)}`)
-  const json = JSON.parse(text)
-  if (!json?.ok) throw new Error(json?.error || "API error")
-  return json
-}
-async function apiPost<T>(path: string, body: any): Promise<ApiOk<T>> {
-  const res = await fetch(apiUrl(path), { method:"POST", credentials:"include", headers:{"content-type":"application/json"}, body:JSON.stringify(body) })
-  const ct = res.headers.get("content-type") || "", text = await res.text()
-  if (res.status === 401) throw new Error("unauthorized")
-  if (!ct.includes("application/json")) throw new Error(`API returned non-JSON (${res.status}): ${text.slice(0,180)}`)
-  const json = JSON.parse(text)
-  if (!json?.ok) throw new Error(json?.error || "API error")
-  return json
-}
-
-// ── ユーティリティ（変更なし） ─────────────────────────────────
+// ── ユーティリティ ─────────────────────────────────────────────
 function pad2(n: number) { return String(n).padStart(2, "0") }
 function monthStr(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}` }
 function addMonths(d: Date, delta: number) { const x = new Date(d); x.setDate(1); x.setMonth(x.getMonth()+delta); x.setHours(12,0,0,0); return x }
@@ -146,17 +120,18 @@ function TimeSelect({ value, onChange, disabled }: { value: string; onChange: (v
   )
 }
 
-// ── SlotCard（テーブルをカード式に変更） ──────────────────────────
+// ── SlotCard ──────────────────────────────────────────────────
 function SlotCard({ title, month, rows, disabled, onChange }: { title: string; month: string; rows: SlotRow[]; disabled: boolean; onChange: (rows: SlotRow[]) => void }) {
   const maxDay = useMemo(() => daysInMonth(month), [month])
   function update(id: string, patch: Partial<SlotRow>) { onChange(rows.map(r => r.id === id ? { ...r, ...patch } : r)) }
-  function remove(id: string) { onChange(rows.filter(r => r.id !== id)) }
   function add() { onChange([...rows, { id: uid(), date: toYmd(month, 1), start: "17:00", end: "22:00", note: "" }]) }
+  function remove(id: string) { onChange(rows.filter(r => r.id !== id)) }
 
   return (
     <div className="sec-card">
       <div className="sec-head">
         <span className="sec-title">{title}</span>
+        <span style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>{rows.length}件</span>
       </div>
       {rows.map((r, i) => (
         <div key={r.id} className="slot-row">
@@ -168,11 +143,15 @@ function SlotCard({ title, month, rows, disabled, onChange }: { title: string; m
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:"#89adb8", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6, fontFamily:"'Noto Sans JP',sans-serif" }}>日付</div>
             <div className="date-grid">
-              <input type="date" className="field-input" value={r.date}
-                min={`${month}-01`} max={`${month}-${pad2(maxDay)}`}
-                disabled={disabled} onChange={e => update(r.id, { date: e.target.value })} />
-              <span style={{ fontSize:13, color:"#3b6878", fontWeight:700, fontFamily:"'Noto Sans JP',sans-serif", whiteSpace:"nowrap" }}>
-                {r.date ? `（${weekdayOf(r.date)}）` : ""}
+              <select className="field-input" value={r.date} disabled={disabled} onChange={e => update(r.id, { date: e.target.value })}
+                style={{ appearance:"none", WebkitAppearance:"none" }}>
+                {Array.from({ length: maxDay }, (_, i) => {
+                  const ymd = toYmd(month, i + 1)
+                  return <option key={ymd} value={ymd}>{ymd.slice(5).replace("-","/")}（{weekdayOf(ymd)}）</option>
+                })}
+              </select>
+              <span style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif", whiteSpace:"nowrap" }}>
+                {weekdayOf(r.date) ? `（${weekdayOf(r.date)}）` : ""}
               </span>
             </div>
           </div>
@@ -203,7 +182,7 @@ function SlotCard({ title, month, rows, disabled, onChange }: { title: string; m
 // ── メイン ────────────────────────────────────────────────────────
 export default function ShiftSubmitPage() {
   const router = useRouter()
-  const [me,      setMe]      = useState<Me | null>(null)
+  const [meUser,  setMeUser]  = useState<User | null>(null)
   const [error,   setError]   = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -224,60 +203,88 @@ export default function ShiftSubmitPage() {
   const canEdit = useMemo(() => {
     const now = new Date()
     if (now <= deadline) return true
-    if (me?.role === "admin") return true
+    if (meUser?.role === "admin") return true
     return allowedAfterDeadline
-  }, [deadline, allowedAfterDeadline, me?.role])
+  }, [deadline, allowedAfterDeadline, meUser?.role])
 
-  // ユーザー取得（変更なし）
+  // ユーザー取得
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      try { setLoading(true); setError(null); const r = await apiGet<{ user: Me }>("/api/me.php"); if (!cancelled) setMe(r.user) }
-      catch (e: any) { if (cancelled) return; if (e?.message === "unauthorized") { router.replace("/login/"); return } setError(e?.message||"読み込みに失敗しました") }
-      finally { if (!cancelled) setLoading(false) }
+      const r = await me()
+      if (cancelled) return
+      setLoading(false)
+      if (!r.ok) {
+        // 401 → ログインページへリダイレクト
+        if (r.status === 401) { router.replace("/login/"); return }
+        setError(toUserMessage(r as ApiNg, "読み込みに失敗しました"))
+        return
+      }
+      setMeUser(r.user)
     })()
     return () => { cancelled = true }
   }, [router])
 
-  // 期限後許可チェック（変更なし）
+  // 期限後許可チェック
   useEffect(() => {
-    if (!me) return
+    if (!meUser) return
     let cancelled = false
     ;(async () => {
-      try {
-        setError(null); const now = new Date()
-        if (now <= deadline) { setAllowedAfterDeadline(false); return }
-        const perm = await apiGet<{ month: string; allowed: boolean }>(`/api/shift_submission_permission_check.php?month=${encodeURIComponent(targetMonth)}`)
-        if (!cancelled) setAllowedAfterDeadline(Boolean(perm.allowed))
-      } catch (e: any) { if (!cancelled) setError(e?.message||"読み込みに失敗しました") }
+      const now = new Date()
+      if (now <= deadline) { setAllowedAfterDeadline(false); return }
+      const r = await apiFetch<{ month: string; allowed: boolean }>(
+        `/shift_submission_permission_check.php?month=${encodeURIComponent(targetMonth)}`,
+        { method: "GET" }
+      )
+      if (!cancelled) {
+        setAllowedAfterDeadline(r.ok ? Boolean(r.allowed) : false)
+      }
     })()
     return () => { cancelled = true }
-  }, [me, deadline, targetMonth])
+  }, [meUser, deadline, targetMonth])
 
-  // 既存データ取得（変更なし）
+  // 既存データ取得
   useEffect(() => {
-    if (!me) return
+    if (!meUser) return
     let cancelled = false
     ;(async () => {
-      try {
-        setSavedMsg(null)
-        const res = await apiGet<{ submission: { staff_slots: any[]; lesson_slots: any[] } }>(`/api/shift_submission_get.php?month=${encodeURIComponent(targetMonth)}`)
-        if (cancelled) return
-        const toRows = (slots: any[]): SlotRow[] => (Array.isArray(slots)?slots:[]).map(s => ({ id:uid(), date:String(s.date||`${targetMonth}-01`), start:String(s.start||"17:00").slice(0,5), end:String(s.end||"22:00").slice(0,5), note:String(s.note||"") }))
-        setStaffRows(toRows(res.submission?.staff_slots||[]))
-        setLessonRows(toRows(res.submission?.lesson_slots||[]))
-      } catch (e: any) { if (!cancelled) setError(e?.message||"読み込みに失敗しました") }
+      setSavedMsg(null)
+      const r = await apiFetch<{ submission: { staff_slots: any[]; lesson_slots: any[] } }>(
+        `/shift_submission_get.php?month=${encodeURIComponent(targetMonth)}`,
+        { method: "GET" }
+      )
+      if (cancelled) return
+      if (!r.ok) {
+        setError(toUserMessage(r as ApiNg, "読み込みに失敗しました"))
+        return
+      }
+      const toRows = (slots: any[]): SlotRow[] =>
+        (Array.isArray(slots) ? slots : []).map(s => ({
+          id:    uid(),
+          date:  String(s.date  || `${targetMonth}-01`),
+          start: String(s.start || "17:00").slice(0, 5),
+          end:   String(s.end   || "22:00").slice(0, 5),
+          note:  String(s.note  || ""),
+        }))
+      setStaffRows(toRows(r.submission?.staff_slots  || []))
+      setLessonRows(toRows(r.submission?.lesson_slots || []))
     })()
     return () => { cancelled = true }
-  }, [me, targetMonth])
+  }, [meUser, targetMonth])
 
   async function onSave() {
-    try {
-      setSaving(true); setError(null); setSavedMsg(null)
-      await apiPost("/api/shift_submission_save.php", { month: targetMonth, staff_slots: staffRows.map(r=>({date:r.date,start:r.start,end:r.end,note:r.note})), lesson_slots: lessonRows.map(r=>({date:r.date,start:r.start,end:r.end,note:r.note})) })
-      setSavedMsg("保存しました")
-    } catch (e: any) { setError(e?.message||"保存に失敗しました") }
-    finally { setSaving(false) }
+    setSaving(true); setError(null); setSavedMsg(null)
+    const r = await apiFetch<{}>("/shift_submission_save.php", {
+      method: "POST",
+      body: JSON.stringify({
+        month:        targetMonth,
+        staff_slots:  staffRows.map(r  => ({ date: r.date,  start: r.start,  end: r.end,  note: r.note  })),
+        lesson_slots: lessonRows.map(r => ({ date: r.date,  start: r.start,  end: r.end,  note: r.note  })),
+      }),
+    })
+    setSaving(false)
+    if (!r.ok) { setError(toUserMessage(r as ApiNg, "保存に失敗しました")); return }
+    setSavedMsg("保存しました")
   }
 
   if (loading) return (

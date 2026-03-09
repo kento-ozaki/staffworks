@@ -16,8 +16,9 @@ type TabKey           = "event" | "manager" | "shift" | "late"
 type LessonField      = { start: string; end: string; note?: string }
 type ShiftRow         = { id: number; user_id: number; username: string; staff_id?: string | null; date: string; start: string; end: string; lesson_slots: ShiftSlot[]; note?: string | null }
 
-// ── API（変更なし） ──────────────────────────────────────────────
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "/app/staffworks/api").replace(/\/$/, "")
+// ── API ──────────────────────────────────────────────────────────
+// ✅ [修正1] API_BASE を lib/api.ts の定数と同じ値に統一
+const API_BASE = "/app/staffworks/api"
 const BRAND = "#006284"
 const BRAND_SOFT = "rgba(0,98,132,0.8)"
 const SHIFT_LIST_ENDPOINTS   = ["shift_list.php"]
@@ -55,7 +56,7 @@ async function apiPostFirst<T>(paths: string[], body: any): Promise<{ data: ApiO
   throw lastErr || new Error("API error")
 }
 
-// ── ユーティリティ（変更なし） ───────────────────────────────────
+// ── ユーティリティ ───────────────────────────────────────────────
 function pad2(n: number) { return String(n).padStart(2, "0") }
 function startOfMonth(d: Date) { const x = new Date(d); x.setDate(1); x.setHours(12, 0, 0, 0); return x }
 function addMonths(d: Date, m: number) { const x = new Date(d); x.setMonth(x.getMonth() + m); return startOfMonth(x) }
@@ -113,7 +114,7 @@ function normalizeShiftRow(raw: any): ShiftRow | null {
   return { id, user_id, username, staff_id: raw?.staff_id ?? null, date, start, end, lesson_slots, note: raw?.note ?? null }
 }
 
-// ── QuarterTimeSelect（変更なし） ─────────────────────────────────
+// ── QuarterTimeSelect ─────────────────────────────────────────────
 function QuarterTimeSelect({ value, onChange }: { value: string; onChange: (next: string) => void }) {
   const normalized = normalizeTimeInput(value) || "09:00"
   const [hour = "09", minute = "00"] = normalized.split(":")
@@ -172,38 +173,38 @@ select.field-input{padding-right:32px;}
 .btn-primary:active{opacity:.8;}
 .btn-primary.danger{background:rgba(0,98,132,0.75);}
 .btn-outline{height:44px;border-radius:9px;border:1.5px solid #d8eaee;background:#fff;color:#3b6878;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
-.btn-outline:active{opacity:.8;}
-.btn-sm{height:32px;border-radius:7px;font-size:12px;padding:0 12px;}
+.btn-outline:active{opacity:.7;}
+.btn-sm{height:34px;font-size:12px;padding:0 12px;}
+.err-box{padding:12px 14px;background:#fdf1f1;border:1px solid #e8b8b8;border-radius:10px;color:#b83030;font-size:13px;font-family:'Noto Sans JP',sans-serif;}
 
-/* ── スタッフ候補カード ── */
-.staff-card{background:#f0f5f7;border:1.5px solid #d8eaee;border-radius:10px;padding:12px;cursor:pointer;text-align:left;width:100%;-webkit-tap-highlight-color:transparent;transition:border-color .12s,background .12s;}
-.staff-card.selected{background:rgba(0,98,132,.08);border-color:#006284;}
-.staff-card-name{font-size:14px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;margin-bottom:4px;}
-.staff-card-meta{font-size:12px;color:#3b6878;font-family:'Noto Sans JP',sans-serif;line-height:1.5;}
-.staff-card-hint{font-size:11px;color:#89adb8;text-align:right;font-family:'Noto Sans JP',sans-serif;}
+/* ── リスト行 ── */
+.list-row{padding:12px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;gap:12px;}
+.list-row:last-child{border-bottom:none;}
+.list-date{font-size:13px;font-weight:700;color:#006284;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;flex-shrink:0;}
+.list-label{flex:1;font-size:13px;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* ── 授業フィールド ── */
-.lesson-card{background:#f0f5f7;border:1px solid #d8eaee;border-radius:10px;padding:12px;display:grid;gap:10px;}
-.lesson-title{font-size:12px;font-weight:700;color:#89adb8;font-family:'Noto Sans JP',sans-serif;letter-spacing:.08em;text-transform:uppercase;}
-
-/* ── シフト一覧行 ── */
-.shift-row{padding:12px 16px;border-bottom:1px solid #d8eaee;display:grid;gap:6px;}
+/* ── シフト行 ── */
+.shift-row{padding:12px 16px;border-bottom:1px solid #d8eaee;}
 .shift-row:last-child{border-bottom:none;}
-.shift-row-main{font-size:13px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;line-height:1.5;}
+.shift-row-main{font-size:13px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;margin-bottom:8px;}
 .shift-row-actions{display:flex;gap:8px;}
 
-/* ── リスト行（イベント・公休） ── */
-.list-row{padding:12px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;gap:10px;}
-.list-row:last-child{border-bottom:none;}
-.list-date{font-size:12px;color:#3b6878;font-weight:700;font-family:'Noto Sans JP',sans-serif;flex-shrink:0;min-width:80px;}
-.list-label{flex:1;font-size:13px;color:#0c1d24;font-weight:500;font-family:'Noto Sans JP',sans-serif;word-break:break-word;}
+/* ── スタッフカード ── */
+.staff-card{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #d8eaee;background:#f8fbfc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .12s,background .12s;}
+.staff-card.selected{border-color:#006284;background:#eaf4f8;}
+.staff-card-name{font-size:14px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;}
+.staff-card-hint{font-size:11px;color:#89adb8;font-family:'Noto Sans JP',sans-serif;}
+.staff-card-meta{font-size:12px;color:#3b6878;font-family:'Noto Sans JP',sans-serif;margin-top:4px;}
 
-/* ── エラー / 空 ── */
-.err-box{padding:12px 14px;background:#fdf1f1;border:1px solid #e8b8b8;border-radius:8px;color:#b83030;font-size:13px;font-family:'Noto Sans JP',sans-serif;line-height:1.5;}
-.empty-box{padding:20px;text-align:center;color:#89adb8;font-size:13px;font-family:'Noto Sans JP',sans-serif;}
+/* ── 授業カード ── */
+.lesson-card{padding:12px;border-radius:10px;border:1.5px solid #d8eaee;background:#f8fbfc;display:grid;gap:10px;}
+.lesson-title{font-size:12px;font-weight:700;color:#89adb8;font-family:'Noto Sans JP',sans-serif;}
 
-/* ── 権限トグル ── */
-.perm-row{padding:10px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;gap:12px;}
+/* ── 空ボックス ── */
+.empty-box{padding:20px 16px;text-align:center;font-size:13px;color:#89adb8;font-family:'Noto Sans JP',sans-serif;}
+
+/* ── パーミッション行 ── */
+.perm-row{padding:12px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;gap:12px;}
 .perm-row:last-child{border-bottom:none;}
 .perm-name{flex:1;font-size:13px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .perm-btn{flex-shrink:0;height:32px;padding:0 14px;border-radius:999px;border:none;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -273,12 +274,18 @@ export default function ShiftsManagePage() {
 
   const shiftsForMonth = useMemo(() => [...shifts].sort((a,b) => a.date===b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date)), [shifts])
 
-  // ── データ取得（変更なし） ──────────────────────────────────────
+  // ── データ取得 ──────────────────────────────────────────────────
   useEffect(() => {
     ;(async () => {
-      try { setLoading(true); setErr(null); const r = await apiGet<{ user: Me }>("me.php"); setMeUser(r.user) }
-      catch (e: any) { if (String(e?.message||"").includes("unauthorized")) { router.replace("/app/staffworks/login/"); return } setErr(e?.message||"読み込みに失敗しました") }
-      finally { setLoading(false) }
+      try {
+        setLoading(true); setErr(null)
+        const r = await apiGet<{ user: Me }>("me.php")
+        setMeUser(r.user)
+      } catch (e: any) {
+        // ✅ [修正2] ハードコードされたフルパスを相対パスに修正
+        if (String(e?.message||"").includes("unauthorized")) { router.replace("/login/"); return }
+        setErr(e?.message||"読み込みに失敗しました")
+      } finally { setLoading(false) }
     })()
   }, [router])
 
@@ -317,7 +324,8 @@ export default function ShiftsManagePage() {
 
   useEffect(() => {
     if (!meUser) return
-    if (!canManage) { router.replace("/app/staffworks/shifts/"); return }
+    // ✅ [修正3] ハードコードされたフルパスを相対パスに修正
+    if (!canManage) { router.replace("/shifts/"); return }
     ;(async () => { try { setErr(null); await Promise.all([refreshEventsAndOff(), refreshUsersAndPerms(), refreshShifts()]) } catch (e: any) { setErr(e?.message||"読み込みに失敗しました") } })()
   }, [meUser, canManage, month, range.from, range.to, router])
 
@@ -342,8 +350,8 @@ export default function ShiftsManagePage() {
         if (cancelled) return
         const next: Record<number, SubmissionDetail> = {}; const subIds = new Set<number>()
         for (const [uid, detail] of results) {
-          const has = !!detail && ((detail.staff_slots||[]).some(s=>isSameMonth(s.date,month))||(detail.lesson_slots||[]).some(s=>isSameMonth(s.date,month)))
-          if (detail && has) { next[uid] = detail; subIds.add(uid) }
+          const has = !!(detail && ((detail.staff_slots||[]).some(s=>isSameMonth(s.date,month))||(detail.lesson_slots||[]).some(s=>isSameMonth(s.date,month))))
+          if (detail && has) { next[uid as number] = detail; subIds.add(uid as number) }
         }
         setAllSubmissionDetails(next); setSubmittedUserIds(subIds)
       } catch { if (!cancelled) { setAllSubmissionDetails({}); setSubmittedUserIds(new Set()) } }
@@ -351,7 +359,7 @@ export default function ShiftsManagePage() {
     return () => { cancelled = true }
   }, [canManage, month, users])
 
-  // ── フォーム操作（変更なし） ─────────────────────────────────────
+  // ── フォーム操作 ─────────────────────────────────────────────────
   function resetShiftForm(keepUser = false) {
     setShiftId(null)
     setSelectedDate(p => (p&&p>=range.from&&p<=range.to)?p:range.from)
