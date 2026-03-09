@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import type { ReactNode } from "react"
 import "./globals.css"
 import { AppShell } from "@/components/shell/AppShell"
@@ -8,10 +8,12 @@ export const metadata: Metadata = {
   title: "StaffWorks",
 }
 
-// Next.js の viewport export は <meta name="viewport"> を生成するが、
-// 一部の環境では反映が遅れる／上書きされるケースがあるため
-// <head> 内にも直接 meta を記述して二重に保証する（後述）
-export const viewport = {
+// Next.js の `export const viewport` が <meta name="viewport"> を自動生成する。
+// output: "export"（静的エクスポート）モードでは <head> に手動で
+// <meta name="viewport"> を書くと重複エラーになるため、ここでのみ定義する。
+// minimum-scale=1 を明示することで、PC のブラウザ設定による
+// デフォルトズームが初期表示に影響しないようにする。
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   minimumScale: 1,
@@ -25,20 +27,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ja" style={{ background: "#006284" }}>
       <head>
-        {/*
-          ── viewport を <meta> でも明示する ──────────────────────────
-          Next.js の `export const viewport` が生成する meta と内容を
-          一致させることで、フレームワークの処理タイミングに関係なく
-          ブラウザが確実に正しい viewport を読み取れるようにする。
-          minimum-scale=1 を加えることで、PC の「アクセシビリティ設定」
-          によるブラウザデフォルトのズームが初期表示に影響しないように
-          する。
-        */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
-        />
-
         {/* PWA / Add to Home Screen */}
         <link rel="manifest" href={`${basePath}/manifest.webmanifest`} />
 
