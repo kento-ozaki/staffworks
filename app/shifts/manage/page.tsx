@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiFetch } from "@/lib/api"
+import type { ApiNg } from "@/lib/api"
+import { toUserMessage } from "@/lib/errors"
 
-// ── 型（変更なし） ───────────────────────────────────────────────
+// ── 型 ───────────────────────────────────────────────────────────
 type Me               = { id: number; role: string; username: string }
 type CalendarEvent    = { id: number; event_date: string; title: string; note?: string | null }
 type ManagerDayOff    = { id: number; off_date: string; label: string; note?: string | null }
@@ -11,49 +14,42 @@ type SubmissionListItem = { user_id: number; month: string; submitted_at?: strin
 type ShiftSlot        = { date: string; start: string; end: string; note?: string | null }
 type SubmissionDetail = { submitted_at?: string | null; updated_at?: string | null; staff_slots: ShiftSlot[]; lesson_slots: ShiftSlot[] }
 type UserRow          = { id: number; staff_id?: string | null; username: string; role: string }
-type ApiOk<T>         = { ok: true } & T
 type TabKey           = "event" | "manager" | "shift" | "late"
 type LessonField      = { start: string; end: string; note?: string }
 type ShiftRow         = { id: number; user_id: number; username: string; staff_id?: string | null; date: string; start: string; end: string; lesson_slots: ShiftSlot[]; note?: string | null }
 
-// ── API ──────────────────────────────────────────────────────────
-// ✅ [修正1] API_BASE を lib/api.ts の定数と同じ値に統一
-const API_BASE = "/app/staffworks/api"
-const BRAND = "#006284"
-const BRAND_SOFT = "rgba(0,98,132,0.8)"
-const SHIFT_LIST_ENDPOINTS   = ["shift_list.php"]
-const SHIFT_CREATE_ENDPOINTS = ["shift_create.php"]
-const SHIFT_UPDATE_ENDPOINTS = ["shift_update.php"]
-const SHIFT_DELETE_ENDPOINTS = ["shift_delete.php"]
+// ── API エンドポイント定数 ────────────────────────────────────────
+// 以前の配列（SHIFT_LIST_ENDPOINTS 等）は要素1つのみだったため文字列定数に変更
+const SHIFT_LIST_ENDPOINT   = "shift_list.php"
+const SHIFT_CREATE_ENDPOINT = "shift_create.php"
+const SHIFT_UPDATE_ENDPOINT = "shift_update.php"
+const SHIFT_DELETE_ENDPOINT = "shift_delete.php"
 
-function apiUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path
-  const filename = path.split("?")[0].split("#")[0].split("/").filter(Boolean).pop() || path
-  const qs = path.includes("?") ? path.slice(path.indexOf("?")) : ""
-  return `${API_BASE}/${filename}${qs}`
+const BRAND      = "#006284"
+const BRAND_SOFT = "rgba(0,98,132,0.8)"
+
+// ── API ヘルパー ─────────────────────────────────────────────────
+// lib/api.ts の apiFetch をラップして例外スローに統一
+// （このファイル内では try/catch で e.message を使う慣習があるため）
+async function apiGet<T>(path: string): Promise<T & { ok: true }> {
+  const r = await apiFetch<T>(path, { method: "GET" })
+  if (!r.ok) {
+    if (r.status === 401) throw new Error("unauthorized")
+    throw new Error(toUserMessage(r as ApiNg))
+  }
+  return r as T & { ok: true }
 }
-async function readJson<T>(res: Response, path: string): Promise<ApiOk<T>> {
-  const ct = res.headers.get("content-type") || ""
-  const text = await res.text()
-  if (res.status === 401) throw new Error("unauthorized")
-  if (!ct.includes("application/json")) throw new Error(`API returned non-JSON (${res.status}) from ${apiUrl(path)}: ${text.slice(0, 180)}`)
-  const json = JSON.parse(text)
-  if (!json?.ok) throw new Error(json?.error || "API error")
-  return json
-}
-async function apiGet<T>(path: string): Promise<ApiOk<T>> { return readJson<T>(await fetch(apiUrl(path), { credentials: "include" }), path) }
-async function apiPost<T>(path: string, body: any): Promise<ApiOk<T>> {
-  return readJson<T>(await fetch(apiUrl(path), { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), path)
-}
-async function apiGetFirst<T>(paths: string[]): Promise<{ data: ApiOk<T>; path: string }> {
-  let lastErr: unknown = null
-  for (const path of paths) { try { return { data: await apiGet<T>(path), path } } catch (e) { lastErr = e } }
-  throw lastErr || new Error("API error")
-}
-async function apiPostFirst<T>(paths: string[], body: any): Promise<{ data: ApiOk<T>; path: string }> {
-  let lastErr: unknown = null
-  for (const path of paths) { try { return { data: await apiPost<T>(path, body), path } } catch (e) { lastErr = e } }
-  throw lastErr || new Error("API error")
+
+async function apiPost<T>(path: string, body: unknown): Promise<T & { ok: true }> {
+  const r = await apiFetch<T>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) {
+    if (r.status === 401) throw new Error("unauthorized")
+    throw new Error(toUserMessage(r as ApiNg))
+  }
+  return r as T & { ok: true }
 }
 
 // ── ユーティリティ ───────────────────────────────────────────────
@@ -115,64 +111,61 @@ function normalizeShiftRow(raw: any): ShiftRow | null {
 }
 
 // ── QuarterTimeSelect ─────────────────────────────────────────────
-function QuarterTimeSelect({ value, onChange }: { value: string; onChange: (next: string) => void }) {
-  const normalized = normalizeTimeInput(value) || "09:00"
-  const [hour = "09", minute = "00"] = normalized.split(":")
-  const sel: React.CSSProperties = { flex:1, minWidth:0, height:44, borderRadius:9, border:"1.5px solid #d8eaee", background:"#f0f5f7", padding:"0 10px", fontSize:16, fontFamily:"'Noto Sans JP',sans-serif", outline:"none", WebkitAppearance:"none" }
+function QuarterTimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [h, m] = value ? value.split(":") : ["", ""]
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-      <select value={hour}   onChange={e => onChange(`${e.target.value}:${minute}`)} style={sel}>
-        {TIME_HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+    <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:6, alignItems:"center" }}>
+      <select value={h||""} onChange={e => onChange(`${e.target.value}:${m||"00"}`)} className="field-input" style={{ cursor:"pointer" }}>
+        <option value="">--</option>
+        {TIME_HOURS.map(hh => <option key={hh} value={hh}>{hh}</option>)}
       </select>
-      <span style={{ color:"#89adb8", fontWeight:700 }}>:</span>
-      <select value={minute} onChange={e => onChange(`${hour}:${e.target.value}`)} style={sel}>
-        {TIME_MINUTES.map(m => <option key={m} value={m}>{m}</option>)}
+      <span style={{ color:"#89adb8", fontWeight:700, fontSize:14 }}>:</span>
+      <select value={m||""} onChange={e => onChange(`${h||"00"}:${e.target.value}`)} className="field-input" style={{ cursor:"pointer" }}>
+        <option value="">--</option>
+        {TIME_MINUTES.map(mm => <option key={mm} value={mm}>{mm}</option>)}
       </select>
     </div>
   )
 }
 
-// ── CSS ──────────────────────────────────────────────────────────
+// ── CSS ───────────────────────────────────────────────────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto Sans JP:wght@400;500;700&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{-webkit-text-size-adjust:100%;}
-body{background:#f0f5f7;}
-@keyframes spin{to{transform:rotate(360deg)}}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── タブバー ── */
-.tab-bar{display:grid;grid-template-columns:repeat(4,1fr);background:#006284;flex-shrink:0;}
-.tab-btn{height:52px;border:none;background:transparent;color:rgba(255,255,255,.65);font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;border-right:1px solid rgba(255,255,255,.2);padding:0 4px;line-height:1.3;-webkit-tap-highlight-color:transparent;transition:background .12s;}
-.tab-btn:last-child{border-right:none;}
-.tab-btn.on{background:rgba(255,255,255,.18);color:#fff;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid #d8eaee;background:#fff;position:sticky;top:0;z-index:10;}
+.tab-btn{flex:1;height:46px;border:none;background:transparent;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;color:#89adb8;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .12s;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.tab-btn.on{color:#006284;border-bottom-color:#006284;}
 
 /* ── 月ナビ ── */
-.month-nav{height:52px;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border-bottom:1px solid #d8eaee;flex-shrink:0;}
-.month-nav-label{font-size:18px;font-weight:400;font-family:'DM Serif Display',serif;color:#0c1d24;min-width:120px;text-align:center;}
-.month-nav-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #d8eaee;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#3b6878;-webkit-tap-highlight-color:transparent;}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 16px;background:#fff;border-bottom:1px solid #d8eaee;}
+.month-nav-label{font-size:16px;font-weight:700;color:#006284;font-family:'Noto Sans JP',sans-serif;min-width:80px;text-align:center;}
+.month-nav-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid #d8eaee;background:#f8fbfc;display:flex;align-items:center;justify-content:center;font-size:18px;color:#3b6878;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 
-/* ── コンテンツ共通 ── */
-.content{padding:16px;display:grid;gap:16px;max-width:720px;margin:0 auto;padding-bottom:80px;}
+/* ── コンテンツ ── */
+.content{padding:16px;display:grid;gap:16px;max-width:720px;margin:0 auto;}
 
 /* ── セクションカード ── */
-.sec-card{background:#fff;border-radius:14px;border:1px solid #d8eaee;overflow:hidden;box-shadow:0 1px 6px rgba(0,98,132,.06);}
-.sec-head{padding:14px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sec-card{background:#fff;border-radius:14px;border:1.5px solid #d8eaee;overflow:hidden;}
+.sec-head{padding:12px 16px;border-bottom:1px solid #d8eaee;display:flex;align-items:center;justify-content:space-between;}
 .sec-title{font-size:14px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;}
-.sec-body{padding:16px;}
 
-/* ── フォームフィールド ── */
-.field{padding:14px 16px;border-bottom:1px solid #d8eaee;}
+/* ── フィールド ── */
+.field{padding:12px 16px;border-bottom:1px solid #d8eaee;}
 .field:last-child{border-bottom:none;}
-.field-label{font-size:11px;font-weight:700;color:#89adb8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;font-family:'Noto Sans JP',sans-serif;}
-.field-input{width:100%;height:44px;border-radius:9px;border:1.5px solid #d8eaee;background:#f0f5f7;padding:0 12px;font-size:16px;font-family:'Noto Sans JP',sans-serif;outline:none;-webkit-appearance:none;color:#0c1d24;}
-.field-input:focus{border-color:#006284;}
-select.field-input{padding-right:32px;}
+.field-label{font-size:12px;font-weight:700;color:#89adb8;font-family:'Noto Sans JP',sans-serif;margin-bottom:6px;}
+.field-input{width:100%;height:38px;border-radius:8px;border:1.5px solid #d8eaee;padding:0 12px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:#0c1d24;background:#f8fbfc;outline:none;-webkit-appearance:none;}
+.field-input:focus{border-color:#006284;background:#fff;}
 
 /* ── ボタン ── */
-.btn-primary{height:44px;border-radius:9px;border:none;background:#006284;color:#fff;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
+.btn-primary{height:42px;border-radius:10px;border:none;background:#006284;color:#fff;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
 .btn-primary:active{opacity:.8;}
-.btn-primary.danger{background:rgba(0,98,132,0.75);}
-.btn-outline{height:44px;border-radius:9px;border:1.5px solid #d8eaee;background:#fff;color:#3b6878;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
+.btn-primary:disabled{opacity:.5;cursor:default;}
+.btn-primary.danger{background:#c0392b;}
+.btn-outline{height:38px;border-radius:10px;border:1.5px solid #d8eaee;background:#f8fbfc;color:#3b6878;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
 .btn-outline:active{opacity:.7;}
 .btn-sm{height:34px;font-size:12px;padding:0 12px;}
 .err-box{padding:12px 14px;background:#fdf1f1;border:1px solid #e8b8b8;border-radius:10px;color:#b83030;font-size:13px;font-family:'Noto Sans JP',sans-serif;}
@@ -272,7 +265,8 @@ export default function ShiftsManagePage() {
     }).filter(Boolean) as Array<{ user: UserRow; staff: ShiftSlot[]; lessons: ShiftSlot[] }>
   }, [users, allSubmissionDetails, dayCandidates, selectedDate])
 
-  const shiftsForMonth = useMemo(() => [...shifts].sort((a,b) => a.date===b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date)), [shifts])
+  const shiftsForMonth = useMemo(() => [...shifts].sort((a,b) => a.date===b.date ?
+    a.start.localeCompare(b.start) : a.date.localeCompare(b.date)), [shifts])
 
   // ── データ取得 ──────────────────────────────────────────────────
   useEffect(() => {
@@ -282,7 +276,6 @@ export default function ShiftsManagePage() {
         const r = await apiGet<{ user: Me }>("me.php")
         setMeUser(r.user)
       } catch (e: any) {
-        // ✅ [修正2] ハードコードされたフルパスを相対パスに修正
         if (String(e?.message||"").includes("unauthorized")) { router.replace("/login/"); return }
         setErr(e?.message||"読み込みに失敗しました")
       } finally { setLoading(false) }
@@ -302,42 +295,62 @@ export default function ShiftsManagePage() {
   }, [range.from, range.to])
 
   async function refreshEventsAndOff() {
-    const [ev, off] = await Promise.all([apiGet<{ events: CalendarEvent[] }>(`calendar_events_list.php?from=${range.from}&to=${range.to}`), apiGet<{ days_off: ManagerDayOff[] }>(`manager_days_off_list.php?from=${range.from}&to=${range.to}`)])
+    const [ev, off] = await Promise.all([
+      apiGet<{ events: CalendarEvent[] }>(`calendar_events_list.php?from=${range.from}&to=${range.to}`),
+      apiGet<{ days_off: ManagerDayOff[] }>(`manager_days_off_list.php?from=${range.from}&to=${range.to}`),
+    ])
     setEvents(ev.events||[]); setDaysOff(off.days_off||[])
   }
 
   async function refreshUsersAndPerms() {
     if (!canManage) return
-    const u = await apiGet<{ users: UserRow[] }>("shift_users_list.php"); setUsers(u.users||[])
-    if (canSetPerms) { const p = await apiGet<{ permissions: { user_id: number }[] }>(`shift_submission_permissions_list.php?month=${month}`); setPermUserIds(new Set((p.permissions||[]).map(x=>x.user_id))) }
-    else setPermUserIds(new Set())
-    try { const s = await apiGet<{ items: SubmissionListItem[] }>(`shift_submissions_list.php?month=${month}`); setSubmittedUserIds(new Set((s.items||[]).map(it=>Number(it.user_id)))) } catch { setSubmittedUserIds(new Set()) }
+    const u = await apiGet<{ users: UserRow[] }>("shift_users_list.php")
+    setUsers(u.users||[])
+    if (canSetPerms) {
+      const p = await apiGet<{ permissions: { user_id: number }[] }>(`shift_submission_permissions_list.php?month=${month}`)
+      setPermUserIds(new Set((p.permissions||[]).map(x=>x.user_id)))
+    } else {
+      setPermUserIds(new Set())
+    }
+    try {
+      const s = await apiGet<{ items: SubmissionListItem[] }>(`shift_submissions_list.php?month=${month}`)
+      setSubmittedUserIds(new Set((s.items||[]).map(it=>Number(it.user_id))))
+    } catch { setSubmittedUserIds(new Set()) }
   }
 
   async function refreshShifts() {
     try {
-      const { data } = await apiGetFirst<any>(SHIFT_LIST_ENDPOINTS.map(n=>`${n}?from=${range.from}&to=${range.to}`))
+      const data = await apiGet<any>(`${SHIFT_LIST_ENDPOINT}?from=${range.from}&to=${range.to}`)
       const raw = data.items||data.shifts||data.list||[]
-      setShifts(Array.isArray(raw)?raw.map(normalizeShiftRow).filter(Boolean) as ShiftRow[]:[])
+      setShifts(Array.isArray(raw) ? raw.map(normalizeShiftRow).filter(Boolean) as ShiftRow[] : [])
     } catch (e: any) { setShifts([]); throw new Error(e?.message||"シフト一覧の取得に失敗しました") }
   }
 
   useEffect(() => {
     if (!meUser) return
-    // ✅ [修正3] ハードコードされたフルパスを相対パスに修正
     if (!canManage) { router.replace("/shifts/"); return }
     ;(async () => { try { setErr(null); await Promise.all([refreshEventsAndOff(), refreshUsersAndPerms(), refreshShifts()]) } catch (e: any) { setErr(e?.message||"読み込みに失敗しました") } })()
   }, [meUser, canManage, month, range.from, range.to, router])
 
   useEffect(() => {
     if (!canManage || !selectedUserId) { setSubmissionDetail(null); return }
-    ;(async () => { try { const d = await apiGet<{ submission: SubmissionDetail | null }>(`shift_submission_get_for_manage.php?month=${month}&user_id=${selectedUserId}`); setSubmissionDetail(d.submission) } catch { setSubmissionDetail(null) } })()
+    ;(async () => {
+      try {
+        const d = await apiGet<{ submission: SubmissionDetail | null }>(`shift_submission_get_for_manage.php?month=${month}&user_id=${selectedUserId}`)
+        setSubmissionDetail(d.submission)
+      } catch { setSubmissionDetail(null) }
+    })()
   }, [canManage, month, selectedUserId])
 
   useEffect(() => {
     if (!canManage || !selectedDate) { setDayCandidates([]); return }
     let cancelled = false
-    ;(async () => { try { const d = await apiGet<{ candidates?: any[] }>(`shift_submission_day_candidates.php?date=${selectedDate}`); if (!cancelled) setDayCandidates(Array.isArray(d.candidates)?d.candidates:[]) } catch { if (!cancelled) setDayCandidates([]) } })()
+    ;(async () => {
+      try {
+        const d = await apiGet<{ candidates?: any[] }>(`shift_submission_day_candidates.php?date=${selectedDate}`)
+        if (!cancelled) setDayCandidates(Array.isArray(d.candidates) ? d.candidates : [])
+      } catch { if (!cancelled) setDayCandidates([]) }
+    })()
     return () => { cancelled = true }
   }, [canManage, selectedDate])
 
@@ -346,7 +359,12 @@ export default function ShiftsManagePage() {
     let cancelled = false
     ;(async () => {
       try {
-        const results = await Promise.all(users.map(async u => { try { const d = await apiGet<{ submission: SubmissionDetail | null }>(`shift_submission_get_for_manage.php?month=${month}&user_id=${u.id}`); return [u.id, d.submission] as const } catch { return [u.id, null] as const } }))
+        const results = await Promise.all(users.map(async u => {
+          try {
+            const d = await apiGet<{ submission: SubmissionDetail | null }>(`shift_submission_get_for_manage.php?month=${month}&user_id=${u.id}`)
+            return [u.id, d.submission] as const
+          } catch { return [u.id, null] as const }
+        }))
         if (cancelled) return
         const next: Record<number, SubmissionDetail> = {}; const subIds = new Set<number>()
         for (const [uid, detail] of results) {
@@ -375,18 +393,42 @@ export default function ShiftsManagePage() {
   }
 
   async function addEvent() {
-    try { setErr(null); const title = eventTitle.trim(); if (!title) { setErr("イベント名を入力してください"); return }
-      await apiPost("calendar_events_upsert.php", { id:null, event_date:eventDate, title, note:null }); setEventTitle(""); await refreshEventsAndOff()
+    try {
+      setErr(null)
+      const title = eventTitle.trim()
+      if (!title) { setErr("イベント名を入力してください"); return }
+      await apiPost("calendar_events_upsert.php", { id:null, event_date:eventDate, title, note:null })
+      setEventTitle("")
+      await refreshEventsAndOff()
     } catch (e: any) { setErr(e?.message||"登録に失敗しました") }
   }
-  async function deleteEvent(id: number) { try { setErr(null); await apiPost("calendar_events_delete.php", { id }); await refreshEventsAndOff() } catch (e: any) { setErr(e?.message||"削除に失敗しました") } }
+
+  async function deleteEvent(id: number) {
+    try { setErr(null); await apiPost("calendar_events_delete.php", { id }); await refreshEventsAndOff() }
+    catch (e: any) { setErr(e?.message||"削除に失敗しました") }
+  }
+
   function isOffDate(d: string) { return daysOff.some(x => x.off_date === d) }
-  async function toggleDayOff() { try { setErr(null); await apiPost("manager_days_off_set.php", { off_date:offDate, enabled:!isOffDate(offDate), label:"教室長公休", note:null }); await refreshEventsAndOff() } catch (e: any) { setErr(e?.message||"更新に失敗しました") } }
-  async function deleteDayOff(ds: string) { try { setErr(null); await apiPost("manager_days_off_set.php", { off_date:ds, enabled:false, label:"教室長公休", note:null }); await refreshEventsAndOff() } catch (e: any) { setErr(e?.message||"削除に失敗しました") } }
+
+  async function toggleDayOff() {
+    try { setErr(null); await apiPost("manager_days_off_set.php", { off_date:offDate, enabled:!isOffDate(offDate), label:"教室長公休", note:null }); await refreshEventsAndOff() }
+    catch (e: any) { setErr(e?.message||"更新に失敗しました") }
+  }
+
+  async function deleteDayOff(ds: string) {
+    try { setErr(null); await apiPost("manager_days_off_set.php", { off_date:ds, enabled:false, label:"教室長公休", note:null }); await refreshEventsAndOff() }
+    catch (e: any) { setErr(e?.message||"削除に失敗しました") }
+  }
+
   async function setPermission(userId: number, allowed: boolean) {
     if (!canSetPerms) return
-    try { setErr(null); await apiPost("shift_submission_permissions_set.php", { month, user_id:userId, allowed }); setPermUserIds(p => { const n=new Set(p); allowed?n.add(userId):n.delete(userId); return n }) } catch (e: any) { setErr(e?.message||"更新に失敗しました") }
+    try {
+      setErr(null)
+      await apiPost("shift_submission_permissions_set.php", { month, user_id:userId, allowed })
+      setPermUserIds(p => { const n=new Set(p); allowed?n.add(userId):n.delete(userId); return n })
+    } catch (e: any) { setErr(e?.message||"更新に失敗しました") }
   }
+
   async function saveShift() {
     if (savingShift) return
     try {
@@ -398,20 +440,32 @@ export default function ShiftsManagePage() {
       if (lessons.some(x => x.start >= x.end)) { setErr("授業時間を正しく入力してください"); return }
       const payload = { ...(shiftId?{id:shiftId}:{}), staff_user_id:selectedUserId, shift_date:selectedDate, start_time:shiftStart, end_time:shiftEnd, lesson_slots:lessons.map(x=>({date:selectedDate,...x})), note:null }
       setSavingShift(true)
-      shiftId ? await apiPostFirst(SHIFT_UPDATE_ENDPOINTS, payload) : await apiPostFirst(SHIFT_CREATE_ENDPOINTS, payload)
+      // 更新か新規作成かでエンドポイントを切り替え
+      shiftId
+        ? await apiPost(SHIFT_UPDATE_ENDPOINT, payload)
+        : await apiPost(SHIFT_CREATE_ENDPOINT, payload)
       await refreshShifts(); resetShiftForm(true)
     } catch (e: any) { setErr(e?.message||"シフトの保存に失敗しました") }
     finally { setSavingShift(false) }
   }
+
   async function deleteShift(id: number) {
-    try { if (!window.confirm("削除しますか？")) return; setErr(null); await apiPostFirst(SHIFT_DELETE_ENDPOINTS, { id, shift_id:id }); await refreshShifts(); if (shiftId===id) resetShiftForm(true) } catch (e: any) { setErr(e?.message||"削除に失敗しました") }
+    try {
+      if (!window.confirm("削除しますか？")) return
+      setErr(null)
+      await apiPost(SHIFT_DELETE_ENDPOINT, { id, shift_id:id })
+      await refreshShifts()
+      if (shiftId===id) resetShiftForm(true)
+    } catch (e: any) { setErr(e?.message||"削除に失敗しました") }
   }
+
   function startEditShift(row: ShiftRow) {
     setActiveTab("shift"); setShiftId(row.id); setSelectedDate(row.date); setSelectedUserId(row.user_id)
     setShiftStart(row.start); setShiftEnd(row.end)
     setLessonFields(row.lesson_slots.length ? row.lesson_slots.map(x=>({start:x.start,end:x.end,note:x.note||""})) : [{ start:"", end:"", note:"" }])
     requestAnimationFrame(() => editCardRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }))
   }
+
   function updateLessonField(i: number, k: keyof LessonField, v: string) { setLessonFields(p => p.map((it,j) => j===i?{...it,[k]:v}:it)) }
   function addLessonField()  { setLessonFields(p => [...p, { start:"", end:"", note:"" }]) }
   function removeLessonField(i: number) { setLessonFields(p => { const n=p.filter((_,j)=>j!==i); return n.length?n:[{ start:"", end:"", note:"" }] }) }
@@ -481,9 +535,9 @@ export default function ShiftsManagePage() {
                 ? <div className="empty-box">この月のイベントはありません</div>
                 : events.map(ev => (
                   <div key={ev.id} className="list-row">
-                    <div className="list-date">{ymdToSlash(ev.event_date)}</div>
-                    <div className="list-label">{ev.title}</div>
-                    <button className="btn-primary danger btn-sm" onClick={() => deleteEvent(ev.id)}>削除</button>
+                    <span className="list-date">{ymdToSlash(ev.event_date)}{weekdayLabel(ev.event_date)}</span>
+                    <span className="list-label">{ev.title}</span>
+                    <button className="btn-outline btn-sm" onClick={() => deleteEvent(ev.id)}>削除</button>
                   </div>
                 ))
               }
@@ -495,20 +549,16 @@ export default function ShiftsManagePage() {
         {activeTab === "manager" && (
           <>
             <div className="sec-card">
-              <div className="sec-head"><span className="sec-title">教室長公休を設定</span></div>
+              <div className="sec-head"><span className="sec-title">公休を設定</span></div>
               <div className="field">
                 <div className="field-label">日付</div>
-                <input type="date" value={offDate} onChange={e => setOffDate(e.target.value)} className="field-input" />
-              </div>
-              <div className="field">
-                <div className="field-label">タイトル</div>
-                <div style={{ height:44, borderRadius:9, border:"1.5px solid #d8eaee", background:"#f0f5f7", display:"flex", alignItems:"center", padding:"0 12px", fontSize:15, color:"#3b6878", fontFamily:"'Noto Sans JP',sans-serif" }}>
-                  教室長公休
-                </div>
+                <select value={offDate} onChange={e => setOffDate(e.target.value)} className="field-input" style={{ cursor:"pointer" }}>
+                  {dateOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
               </div>
               <div className="field">
                 <button className="btn-primary" style={{ width:"100%" }} onClick={toggleDayOff}>
-                  {isOffDate(offDate) ? "この日の公休を解除" : "公休として登録"}
+                  {isOffDate(offDate) ? "公休を解除する" : "公休に設定する"}
                 </button>
               </div>
             </div>
@@ -516,12 +566,12 @@ export default function ShiftsManagePage() {
             <div className="sec-card">
               <div className="sec-head"><span className="sec-title">登録済み公休</span></div>
               {daysOff.length === 0
-                ? <div className="empty-box">この月の公休日はありません</div>
+                ? <div className="empty-box">この月の公休はありません</div>
                 : daysOff.map(d => (
                   <div key={d.id} className="list-row">
-                    <div className="list-date">{ymdToSlash(d.off_date)}</div>
-                    <div className="list-label">{d.label || "教室長公休"}</div>
-                    <button className="btn-primary danger btn-sm" onClick={() => deleteDayOff(d.off_date)}>削除</button>
+                    <span className="list-date">{ymdToSlash(d.off_date)}{weekdayLabel(d.off_date)}</span>
+                    <span className="list-label">{d.label}</span>
+                    <button className="btn-outline btn-sm" onClick={() => deleteDayOff(d.off_date)}>削除</button>
                   </div>
                 ))
               }
@@ -532,65 +582,72 @@ export default function ShiftsManagePage() {
         {/* ══ シフトタブ ══ */}
         {activeTab === "shift" && (
           <>
-            <div ref={editCardRef} className="sec-card">
+            {/* シフト登録・編集カード */}
+            <div className="sec-card" ref={editCardRef}>
               <div className="sec-head">
                 <span className="sec-title">{shiftId ? "シフトを編集" : "シフトを登録"}</span>
-                {shiftId && <button className="btn-outline btn-sm" onClick={() => resetShiftForm(true)}>新規入力に戻す</button>}
+                {shiftId && <button className="btn-outline btn-sm" onClick={() => resetShiftForm()}>新規登録に戻す</button>}
               </div>
 
               {/* 日付 */}
               <div className="field">
                 <div className="field-label">日付</div>
-                <select value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="field-input" style={{ appearance:"none", WebkitAppearance:"none" }}>
-                  {dateOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                <select value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="field-input" style={{ cursor:"pointer" }}>
+                  {dateOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
 
-              {/* スタッフ候補 */}
+              {/* スタッフ */}
               <div className="field">
-                <div className="field-label">勤務可能なスタッフ（提出済）</div>
-                {dayAvailableSubmissions.length === 0 ? (
-                  <div className="empty-box">提出されているデータはありません</div>
-                ) : (
-                  <div style={{ display:"grid", gap:8 }}>
-                    {dayAvailableSubmissions.map(({ user, staff, lessons }) => (
-                      <button key={user.id} type="button"
-                        className={`staff-card${selectedUserId===user.id?" selected":""}`}
-                        onClick={() => setSelectedUserId(user.id)}
-                      >
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                          <div className="staff-card-name">{user.username}</div>
-                          <div className="staff-card-hint">{selectedUserId===user.id?"✓ 選択中":"タップで選択"}</div>
-                        </div>
-                        {staff.length > 0 && (
-                          <div className="staff-card-meta">
-                            勤務: {staff.map(x => formatTimeRange(x.start,x.end)).join(", ")}
-                          </div>
-                        )}
-                        {lessons.length > 0 && (
-                          <div className="staff-card-meta">
-                            授業: {lessons.map(x => formatTimeRange(x.start,x.end)).join(", ")}
-                          </div>
-                        )}
-                        {staff.length === 0 && lessons.length > 0 && (
-                          <div className="staff-card-meta" style={{ color:"#8fa8b4" }}>
-                            ※ 授業のみ（勤務時間の提出なし）
-                          </div>
-                        )}
+                <div className="field-label">スタッフ</div>
+                {users.length === 0
+                  ? <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
+                  : <div style={{ display:"grid", gap:8 }}>
+                    {users.map(u => (
+                      <button key={u.id} className={`staff-card${selectedUserId===u.id?" selected":""}`} onClick={() => setSelectedUserId(u.id)}>
+                        <div className="staff-card-name">{u.username}</div>
+                        {u.staff_id && <div className="staff-card-hint">ID: {u.staff_id}</div>}
+                        {submittedUserIds.has(u.id) && <div className="staff-card-meta">✅ {monthLabel(cursor)} 提出済み</div>}
                       </button>
                     ))}
                   </div>
-                )}
+                }
               </div>
 
-              {/* スタッフ選択 */}
-              <div className="field">
-                <div className="field-label">登録するスタッフ</div>
-                <select value={selectedUserId||0} onChange={e => setSelectedUserId(Number(e.target.value)||0)} className="field-input" style={{ appearance:"none", WebkitAppearance:"none" }}>
-                  <option value={0}>スタッフを選択してください</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.username}{submittedUserIds.has(u.id)?"（提出済）":"（未提出）"}</option>)}
-                </select>
-              </div>
+              {/* 提出状況プレビュー */}
+              {selectedUserId > 0 && (
+                <div className="field">
+                  <div className="field-label">提出希望（{ymdToSlash(selectedDate)}）</div>
+                  {dayAvailableSubmissions.filter(x => x.user.id === selectedUserId).length === 0
+                    ? <div style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>提出データなし</div>
+                    : dayAvailableSubmissions.filter(x => x.user.id === selectedUserId).map((x, i) => (
+                      <div key={i} style={{ fontSize:12, color:"#3b6878", fontFamily:"'Noto Sans JP',sans-serif" }}>
+                        {x.staff.map((s,j) => <div key={j}>勤務: {formatTimeRange(s.start, s.end)}</div>)}
+                        {x.lessons.map((l,j) => <div key={j}>授業: {formatTimeRange(l.start, l.end)}</div>)}
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+
+              {/* 提出済みユーザーのセレクト（提出データがある場合） */}
+              {selectedUserId > 0 && dayAvailableSubmissions.length > 0 && (
+                <div className="field">
+                  <div className="field-label">提出者から選択して反映</div>
+                  <select
+                    className="field-input"
+                    style={{ cursor:"pointer", color: selectedUserId ? "#0c1d24" : "#89adb8" }}
+                    value={selectedUserId}
+                    onChange={e => setSelectedUserId(Number(e.target.value))}
+                  >
+                    {dayAvailableSubmissions.map(x => (
+                      <option key={x.user.id} value={x.user.id}>
+                        {x.user.username}{submittedUserIds.has(x.user.id) ? "（提出済）":"（未提出）"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* 開始・終了 */}
               <div className="field">
