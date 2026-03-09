@@ -641,28 +641,18 @@ export default function ShiftsManagePage() {
                 </select>
               </div>
 
-              {/* ── STEP② その日の提出データ一覧 ── */}
+              {/* ── STEP② その日の提出データ一覧（参照用・選択不可） ── */}
               <div className="field">
                 <div className="step-label">
                   <span className={`step-num${dayAvailableSubmissions.length > 0 ? " done" : ""}`}>2</span>
                   {ymdToSlash(selectedDate)} のシフト希望
                 </div>
-
-                {/* 提出ありスタッフ */}
-                {dayAvailableSubmissions.length > 0 && (
-                  <div style={{ display:"grid", gap:8, marginBottom:8 }}>
+                {dayAvailableSubmissions.length === 0 ? (
+                  <div style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>提出されているシフト希望はありません。</div>
+                ) : (
+                  <div style={{ display:"grid", gap:8 }}>
                     {dayAvailableSubmissions.map(x => (
-                      <div
-                        key={x.user.id}
-                        className={`candidate-card${selectedUserId === x.user.id ? " selected" : ""}`}
-                        onClick={() => {
-                          setSelectedUserId(x.user.id)
-                          // 提出データを勤務・授業に自動反映
-                          if (x.staff.length > 0) { setShiftStart(x.staff[0].start); setShiftEnd(x.staff[0].end) }
-                          if (x.lessons.length > 0) { setLessonFields(x.lessons.map(l => ({ start:l.start, end:l.end, note:l.note||"" }))) }
-                          else { setLessonFields([{ start:"", end:"", note:"" }]) }
-                        }}
-                      >
+                      <div key={x.user.id} className="candidate-card" style={{ cursor:"default" }}>
                         <div className="candidate-header">
                           <span className="candidate-name">{x.user.username}</span>
                           <span className="badge-submitted">✅ 提出済み</span>
@@ -679,59 +669,49 @@ export default function ShiftsManagePage() {
                     ))}
                   </div>
                 )}
+              </div>
 
-                {/* 提出なしスタッフ（提出あり以外の全ユーザー） */}
-                {users.filter(u => !dayAvailableSubmissions.some(x => x.user.id === u.id)).length > 0 && (
-                  <div style={{ display:"grid", gap:6 }}>
-                    {dayAvailableSubmissions.length > 0 && (
-                      <div style={{ fontSize:11, color:"#b8d0da", fontWeight:700, fontFamily:"'Noto Sans JP',sans-serif", padding:"2px 0" }}>未提出</div>
-                    )}
-                    {users
-                      .filter(u => !dayAvailableSubmissions.some(x => x.user.id === u.id))
-                      .map(u => (
-                        <div
-                          key={u.id}
-                          className={`candidate-card${selectedUserId === u.id ? " selected" : ""}`}
-                          onClick={() => { setSelectedUserId(u.id); setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }]) }}
-                        >
-                          <div className="candidate-header">
-                            <span className="candidate-name">{u.username}</span>
-                            <span className="badge-none">未提出</span>
-                          </div>
-                        </div>
-                      ))
-                    }
-                  </div>
-                )}
-
-                {users.length === 0 && (
+              {/* ── STEP③ スタッフ選択（プルダウン） ── */}
+              <div className="field">
+                <div className="step-label">
+                  <span className={`step-num${selectedUserId ? " done" : ""}`}>3</span>
+                  登録するスタッフ
+                </div>
+                {users.length === 0 ? (
                   <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
+                ) : (
+                  <div className="staff-select-wrap">
+                    <select
+                      className={`staff-select${selectedUserId ? " has-value" : ""}`}
+                      value={selectedUserId || ""}
+                      onChange={e => {
+                        const uid = Number(e.target.value)
+                        setSelectedUserId(uid)
+                        // 選択スタッフの提出データがあれば自動反映
+                        const sub = dayAvailableSubmissions.find(x => x.user.id === uid)
+                        if (sub) {
+                          if (sub.staff.length > 0) { setShiftStart(sub.staff[0].start); setShiftEnd(sub.staff[0].end) }
+                          if (sub.lessons.length > 0) { setLessonFields(sub.lessons.map(l => ({ start:l.start, end:l.end, note:l.note||"" }))) }
+                          else { setLessonFields([{ start:"", end:"", note:"" }]) }
+                        } else {
+                          setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }])
+                        }
+                      }}
+                    >
+                      <option value="">スタッフを選択してください</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>{u.username}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
               </div>
 
-              {/* ── STEP③〜⑤ スタッフ選択後に展開 ── */}
+              {/* ── STEP④〜⑤ スタッフ選択後に展開 ── */}
               {selectedUserId > 0 && (() => {
                 const subData = dayAvailableSubmissions.find(x => x.user.id === selectedUserId)
-                const selUser = users.find(u => u.id === selectedUserId)
                 return (
                   <>
-                    {/* STEP③ 選択スタッフ確認バー */}
-                    <div className="field" style={{ background:"#f0f8fb" }}>
-                      <div className="step-label">
-                        <span className="step-num done">3</span>
-                        登録するスタッフ
-                      </div>
-                      <div className="selected-user-bar">
-                        <span className="selected-user-name">{selUser?.username ?? ""}</span>
-                        <button
-                          className="btn-outline btn-sm"
-                          style={{ fontSize:11 }}
-                          onClick={() => { setSelectedUserId(0); setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }]) }}
-                        >
-                          選び直す
-                        </button>
-                      </div>
-                    </div>
 
                     {/* STEP④ 勤務時間 */}
                     <div className="field">
