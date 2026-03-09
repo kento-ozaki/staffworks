@@ -19,7 +19,6 @@ type LessonField      = { start: string; end: string; note?: string }
 type ShiftRow         = { id: number; user_id: number; username: string; staff_id?: string | null; date: string; start: string; end: string; lesson_slots: ShiftSlot[]; note?: string | null }
 
 // ── API エンドポイント定数 ────────────────────────────────────────
-// 以前の配列（SHIFT_LIST_ENDPOINTS 等）は要素1つのみだったため文字列定数に変更
 const SHIFT_LIST_ENDPOINT   = "shift_list.php"
 const SHIFT_CREATE_ENDPOINT = "shift_create.php"
 const SHIFT_UPDATE_ENDPOINT = "shift_update.php"
@@ -29,8 +28,6 @@ const BRAND      = "#006284"
 const BRAND_SOFT = "rgba(0,98,132,0.8)"
 
 // ── API ヘルパー ─────────────────────────────────────────────────
-// lib/api.ts の apiFetch をラップして例外スローに統一
-// （このファイル内では try/catch で e.message を使う慣習があるため）
 async function apiGet<T>(path: string): Promise<T & { ok: true }> {
   const r = await apiFetch<T>(path, { method: "GET" })
   if (!r.ok) {
@@ -41,10 +38,7 @@ async function apiGet<T>(path: string): Promise<T & { ok: true }> {
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T & { ok: true }> {
-  const r = await apiFetch<T>(path, {
-    method: "POST",
-    body: JSON.stringify(body),
-  })
+  const r = await apiFetch<T>(path, { method: "POST", body: JSON.stringify(body) })
   if (!r.ok) {
     if (r.status === 401) throw new Error("unauthorized")
     throw new Error(toUserMessage(r as ApiNg))
@@ -160,6 +154,33 @@ html { -webkit-text-size-adjust: 100%; }
 .field-input{width:100%;height:38px;border-radius:8px;border:1.5px solid #d8eaee;padding:0 12px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:#0c1d24;background:#f8fbfc;outline:none;-webkit-appearance:none;}
 .field-input:focus{border-color:#006284;background:#fff;}
 
+/* ── スタッフセレクト（プルダウン） ── */
+.staff-select-wrap { position: relative; }
+.staff-select-wrap::after {
+  content: '▼'; font-size: 10px; color: #89adb8;
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  pointer-events: none;
+}
+.staff-select {
+  width: 100%; height: 42px; border-radius: 9px;
+  border: 1.5px solid #d8eaee; padding: 0 36px 0 12px;
+  font-size: 14px; font-family: 'Noto Sans JP', sans-serif;
+  color: #0c1d24; background: #f8fbfc;
+  outline: none; -webkit-appearance: none; cursor: pointer;
+  transition: border-color .12s;
+}
+.staff-select:focus { border-color: #006284; background: #fff; }
+.staff-select.has-value { border-color: #006284; background: #eaf4f8; color: #006284; font-weight: 700; }
+
+/* ── 提出バッジ ── */
+.submitted-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px; padding: 3px 9px; border-radius: 6px;
+  background: #eaf5ee; border: 1px solid #9fd0b5;
+  font-size: 11px; font-weight: 700; color: #1a6640;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
 /* ── ボタン ── */
 .btn-primary{height:42px;border-radius:10px;border:none;background:#006284;color:#fff;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
 .btn-primary:active{opacity:.8;}
@@ -181,13 +202,6 @@ html { -webkit-text-size-adjust: 100%; }
 .shift-row:last-child{border-bottom:none;}
 .shift-row-main{font-size:13px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;margin-bottom:8px;}
 .shift-row-actions{display:flex;gap:8px;}
-
-/* ── スタッフカード ── */
-.staff-card{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #d8eaee;background:#f8fbfc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .12s,background .12s;}
-.staff-card.selected{border-color:#006284;background:#eaf4f8;}
-.staff-card-name{font-size:14px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;}
-.staff-card-hint{font-size:11px;color:#89adb8;font-family:'Noto Sans JP',sans-serif;}
-.staff-card-meta{font-size:12px;color:#3b6878;font-family:'Noto Sans JP',sans-serif;margin-top:4px;}
 
 /* ── 授業カード ── */
 .lesson-card{padding:12px;border-radius:10px;border:1.5px solid #d8eaee;background:#f8fbfc;display:grid;gap:10px;}
@@ -214,8 +228,8 @@ export default function ShiftsManagePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("shift")
 
   const [cursor, setCursor] = useState<Date>(() => startOfMonth(new Date()))
-  const range    = useMemo(() => monthRange(cursor), [cursor])
-  const month    = useMemo(() => monthKey(cursor), [cursor])
+  const range       = useMemo(() => monthRange(cursor), [cursor])
+  const month       = useMemo(() => monthKey(cursor), [cursor])
   const dateOptions = useMemo(() => buildMonthDateOptions(cursor), [cursor])
 
   const [events,  setEvents]  = useState<CalendarEvent[]>([])
@@ -227,6 +241,7 @@ export default function ShiftsManagePage() {
 
   const [users,            setUsers]           = useState<UserRow[]>([])
   const [permUserIds,      setPermUserIds]      = useState<Set<number>>(new Set())
+  // ✅ Fix B: submittedUserIds は allSubmissionDetails の useEffect のみが管理する
   const [submittedUserIds, setSubmittedUserIds] = useState<Set<number>>(new Set())
 
   const [selectedDate,   setSelectedDate]   = useState<string>(range.from)
@@ -242,7 +257,7 @@ export default function ShiftsManagePage() {
   const [savingShift, setSavingShift]       = useState(false)
   const editCardRef = useRef<HTMLDivElement | null>(null)
 
-  const canManage  = meUser?.role === "admin" || meUser?.role === "leader"
+  const canManage   = meUser?.role === "admin" || meUser?.role === "leader"
   const canSetPerms = meUser?.role === "admin"
 
   const filteredSubmission = useMemo(() => ({
@@ -253,7 +268,11 @@ export default function ShiftsManagePage() {
   const dayAvailableSubmissions = useMemo(() => {
     if (dayCandidates.length > 0) {
       return dayCandidates
-        .map(c => ({ user: users.find(u => u.id === c.user_id) || { id: c.user_id, username: c.username, role: "", staff_id: null }, staff: c.staff_slots.map(x => ({ date: selectedDate, start: x.start, end: x.end, note: null })), lessons: c.lesson_slots.map(x => ({ date: selectedDate, start: x.start, end: x.end, note: null })) }))
+        .map(c => ({
+          user: users.find(u => u.id === c.user_id) || { id: c.user_id, username: c.username, role: "", staff_id: null },
+          staff:   c.staff_slots.map(x  => ({ date: selectedDate, start: x.start, end: x.end, note: null })),
+          lessons: c.lesson_slots.map(x => ({ date: selectedDate, start: x.start, end: x.end, note: null })),
+        }))
         .filter(r => r.staff.length > 0 || r.lessons.length > 0) as Array<{ user: UserRow; staff: ShiftSlot[]; lessons: ShiftSlot[] }>
     }
     return users.map(u => {
@@ -265,8 +284,9 @@ export default function ShiftsManagePage() {
     }).filter(Boolean) as Array<{ user: UserRow; staff: ShiftSlot[]; lessons: ShiftSlot[] }>
   }, [users, allSubmissionDetails, dayCandidates, selectedDate])
 
-  const shiftsForMonth = useMemo(() => [...shifts].sort((a,b) => a.date===b.date ?
-    a.start.localeCompare(b.start) : a.date.localeCompare(b.date)), [shifts])
+  const shiftsForMonth = useMemo(() =>
+    [...shifts].sort((a,b) => a.date===b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date))
+  , [shifts])
 
   // ── データ取得 ──────────────────────────────────────────────────
   useEffect(() => {
@@ -312,10 +332,8 @@ export default function ShiftsManagePage() {
     } else {
       setPermUserIds(new Set())
     }
-    try {
-      const s = await apiGet<{ items: SubmissionListItem[] }>(`shift_submissions_list.php?month=${month}`)
-      setSubmittedUserIds(new Set((s.items||[]).map(it=>Number(it.user_id))))
-    } catch { setSubmittedUserIds(new Set()) }
+    // ✅ Fix B: ここでは submittedUserIds をセットしない
+    // submittedUserIds は useEffect([canManage, month, users]) 側で一元管理する
   }
 
   async function refreshShifts() {
@@ -329,9 +347,13 @@ export default function ShiftsManagePage() {
   useEffect(() => {
     if (!meUser) return
     if (!canManage) { router.replace("/shifts/"); return }
-    ;(async () => { try { setErr(null); await Promise.all([refreshEventsAndOff(), refreshUsersAndPerms(), refreshShifts()]) } catch (e: any) { setErr(e?.message||"読み込みに失敗しました") } })()
+    ;(async () => {
+      try { setErr(null); await Promise.all([refreshEventsAndOff(), refreshUsersAndPerms(), refreshShifts()]) }
+      catch (e: any) { setErr(e?.message||"読み込みに失敗しました") }
+    })()
   }, [meUser, canManage, month, range.from, range.to, router])
 
+  // selectedUser が変わったとき提出詳細を取得
   useEffect(() => {
     if (!canManage || !selectedUserId) { setSubmissionDetail(null); return }
     ;(async () => {
@@ -342,6 +364,7 @@ export default function ShiftsManagePage() {
     })()
   }, [canManage, month, selectedUserId])
 
+  // 選択日の候補を取得
   useEffect(() => {
     if (!canManage || !selectedDate) { setDayCandidates([]); return }
     let cancelled = false
@@ -354,8 +377,10 @@ export default function ShiftsManagePage() {
     return () => { cancelled = true }
   }, [canManage, selectedDate])
 
+  // ✅ Fix B: submittedUserIds をここで一元管理
+  // refreshUsersAndPerms() の後に users が更新されてこの useEffect が走るため競合しない
   useEffect(() => {
-    if (!canManage || users.length === 0) { setAllSubmissionDetails({}); return }
+    if (!canManage || users.length === 0) { setAllSubmissionDetails({}); setSubmittedUserIds(new Set()); return }
     let cancelled = false
     ;(async () => {
       try {
@@ -368,11 +393,21 @@ export default function ShiftsManagePage() {
         if (cancelled) return
         const next: Record<number, SubmissionDetail> = {}; const subIds = new Set<number>()
         for (const [uid, detail] of results) {
-          const has = !!(detail && ((detail.staff_slots||[]).some(s=>isSameMonth(s.date,month))||(detail.lesson_slots||[]).some(s=>isSameMonth(s.date,month))))
+          // ✅ Fix C: エラー時もここまで来ないように try/catch 済み
+          const has = !!(detail && (
+            (detail.staff_slots||[]).some(s => isSameMonth(s.date, month)) ||
+            (detail.lesson_slots||[]).some(s => isSameMonth(s.date, month))
+          ))
           if (detail && has) { next[uid as number] = detail; subIds.add(uid as number) }
         }
-        setAllSubmissionDetails(next); setSubmittedUserIds(subIds)
-      } catch { if (!cancelled) { setAllSubmissionDetails({}); setSubmittedUserIds(new Set()) } }
+        setAllSubmissionDetails(next)
+        setSubmittedUserIds(subIds) // ✅ ここだけで更新（競合なし）
+      } catch {
+        if (!cancelled) {
+          // ✅ Fix C: エラー時に allSubmissionDetails を空にしない（既存データ保持）
+          // setAllSubmissionDetails({}) は削除
+        }
+      }
     })()
     return () => { cancelled = true }
   }, [canManage, month, users])
@@ -440,7 +475,6 @@ export default function ShiftsManagePage() {
       if (lessons.some(x => x.start >= x.end)) { setErr("授業時間を正しく入力してください"); return }
       const payload = { ...(shiftId?{id:shiftId}:{}), staff_user_id:selectedUserId, shift_date:selectedDate, start_time:shiftStart, end_time:shiftEnd, lesson_slots:lessons.map(x=>({date:selectedDate,...x})), note:null }
       setSavingShift(true)
-      // 更新か新規作成かでエンドポイントを切り替え
       shiftId
         ? await apiPost(SHIFT_UPDATE_ENDPOINT, payload)
         : await apiPost(SHIFT_CREATE_ENDPOINT, payload)
@@ -597,21 +631,32 @@ export default function ShiftsManagePage() {
                 </select>
               </div>
 
-              {/* スタッフ */}
+              {/* ① スタッフ — プルダウン形式に変更 */}
               <div className="field">
                 <div className="field-label">スタッフ</div>
-                {users.length === 0
-                  ? <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
-                  : <div style={{ display:"grid", gap:8 }}>
-                    {users.map(u => (
-                      <button key={u.id} className={`staff-card${selectedUserId===u.id?" selected":""}`} onClick={() => setSelectedUserId(u.id)}>
-                        <div className="staff-card-name">{u.username}</div>
-                        {u.staff_id && <div className="staff-card-hint">ID: {u.staff_id}</div>}
-                        {submittedUserIds.has(u.id) && <div className="staff-card-meta">✅ {monthLabel(cursor)} 提出済み</div>}
-                      </button>
-                    ))}
-                  </div>
-                }
+                {users.length === 0 ? (
+                  <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
+                ) : (
+                  <>
+                    <div className="staff-select-wrap">
+                      <select
+                        className={`staff-select${selectedUserId ? " has-value" : ""}`}
+                        value={selectedUserId || ""}
+                        onChange={e => setSelectedUserId(Number(e.target.value))}
+                      >
+                        <option value="">スタッフを選択してください</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>
+                            {u.username}{submittedUserIds.has(u.id) ? " ✅ 提出済み" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedUserId > 0 && submittedUserIds.has(selectedUserId) && (
+                      <div className="submitted-badge">✅ {monthLabel(cursor)} 提出済み</div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* 提出状況プレビュー */}
@@ -622,7 +667,7 @@ export default function ShiftsManagePage() {
                     ? <div style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>提出データなし</div>
                     : dayAvailableSubmissions.filter(x => x.user.id === selectedUserId).map((x, i) => (
                       <div key={i} style={{ fontSize:12, color:"#3b6878", fontFamily:"'Noto Sans JP',sans-serif" }}>
-                        {x.staff.map((s,j) => <div key={j}>勤務: {formatTimeRange(s.start, s.end)}</div>)}
+                        {x.staff.map((s,j)   => <div key={j}>勤務: {formatTimeRange(s.start, s.end)}</div>)}
                         {x.lessons.map((l,j) => <div key={j}>授業: {formatTimeRange(l.start, l.end)}</div>)}
                       </div>
                     ))

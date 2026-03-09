@@ -121,7 +121,13 @@ function TimeSelect({ value, onChange, disabled }: { value: string; onChange: (v
 }
 
 // ── SlotCard ──────────────────────────────────────────────────
-function SlotCard({ title, month, rows, disabled, onChange }: { title: string; month: string; rows: SlotRow[]; disabled: boolean; onChange: (rows: SlotRow[]) => void }) {
+function SlotCard({ title, month, rows, disabled, onChange }: {
+  title: string
+  month: string
+  rows: SlotRow[]
+  disabled: boolean
+  onChange: (rows: SlotRow[]) => void
+}) {
   const maxDay = useMemo(() => daysInMonth(month), [month])
   function update(id: string, patch: Partial<SlotRow>) { onChange(rows.map(r => r.id === id ? { ...r, ...patch } : r)) }
   function add() { onChange([...rows, { id: uid(), date: toYmd(month, 1), start: "17:00", end: "22:00", note: "" }]) }
@@ -143,8 +149,13 @@ function SlotCard({ title, month, rows, disabled, onChange }: { title: string; m
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:"#89adb8", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6, fontFamily:"'Noto Sans JP',sans-serif" }}>日付</div>
             <div className="date-grid">
-              <select className="field-input" value={r.date} disabled={disabled} onChange={e => update(r.id, { date: e.target.value })}
-                style={{ appearance:"none", WebkitAppearance:"none" }}>
+              <select
+                className="field-input"
+                value={r.date}
+                disabled={disabled}
+                onChange={e => update(r.id, { date: e.target.value })}
+                style={{ appearance:"none", WebkitAppearance:"none" }}
+              >
                 {Array.from({ length: maxDay }, (_, i) => {
                   const ymd = toYmd(month, i + 1)
                   return <option key={ymd} value={ymd}>{ymd.slice(5).replace("-","/")}（{weekdayOf(ymd)}）</option>
@@ -167,8 +178,13 @@ function SlotCard({ title, month, rows, disabled, onChange }: { title: string; m
           {/* メモ */}
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:"#89adb8", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6, fontFamily:"'Noto Sans JP',sans-serif" }}>メモ（任意）</div>
-            <textarea className="field-textarea" value={r.note} placeholder="任意"
-              disabled={disabled} onChange={e => update(r.id, { note: e.target.value })} />
+            <textarea
+              className="field-textarea"
+              value={r.note}
+              placeholder="任意"
+              disabled={disabled}
+              onChange={e => update(r.id, { note: e.target.value })}
+            />
           </div>
         </div>
       ))}
@@ -215,7 +231,6 @@ export default function ShiftSubmitPage() {
       if (cancelled) return
       setLoading(false)
       if (!r.ok) {
-        // 401 → ログインページへリダイレクト
         if (r.status === 401) { router.replace("/login/"); return }
         setError(toUserMessage(r as ApiNg, "読み込みに失敗しました"))
         return
