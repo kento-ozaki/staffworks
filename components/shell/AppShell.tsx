@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div style={{ minHeight: "100%", background: "#F1F1F1" }}> {/* 旧: 100vh → zoom適用時のズレを避けるため100%に変更 */}
+    <div style={{ minHeight: "100%", background: "#f0f5f7" }}> {/* 旧: 100vh → zoom適用時のズレを避けるため100%に変更 */}
       <style>{`
         html, body { overflow-x: hidden; max-width: 100%; }
         * { scrollbar-width: none; }

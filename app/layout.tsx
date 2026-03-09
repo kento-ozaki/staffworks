@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
 
   return (
-    <html lang="ja" style={{ background: "#006284" }}>
+    <html lang="ja" style={{ background: "#f0f5f7" }}>
       <head>
         {/* PWA / Add to Home Screen */}
         <link rel="manifest" href={`${basePath}/manifest.webmanifest`} />
@@ -45,14 +45,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* Theme color (Android/Chrome UI) */}
         <meta name="theme-color" content="#006284" />
 
-        <style>{`html, body { background: #006284; }`}</style>
+        <style>{`html, body { background: #f0f5f7; }`}</style>
       </head>
 
       <body
         style={{
           margin: 0,
           padding: 0,
-          background: "#006284",
+          background: "#f0f5f7",
           overscrollBehavior: "none",
           touchAction: "manipulation",
         }}
