@@ -35,7 +35,7 @@ const SIDE_NAV: SideNavItem[] = [
   // leader も許可（User.role に leader が無い可能性があるので string で許容）
   { key: "page8", label: "シフト管理", href: "/shifts/manage/" ,icon: "shift_manage.svg", roles: ["admin", "leader"] },
   { key: "page9", label: "アカウント管理", href: "/admin/users/", icon: "account_manage.svg", roles: ["admin"] },
-  { key: "page10", label: "アプリ設定", icon: "app_setting.svg", roles: ["admin"], maintenance: true },
+  { key: "page10", label: "アプリ設定", href: "/admin/settings/notices/", icon: "app_setting.svg", roles: ["admin"] },
 ]
 
 function isAuthFreePath(pathname: string): boolean {
