@@ -1,13 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useEffect, useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Guard } from "@/components/Guard"
 import { apiFetch } from "@/lib/api"
 import type { ApiNg } from "@/lib/api"
 import { toUserMessage } from "@/lib/errors"
-import type { User } from "@/lib/auth"
 
 /* ── カラー（既存デザインシステムに準拠） ── */
 const C = {
@@ -503,16 +502,26 @@ function NoticeFormInner({ noticeId }: { noticeId?: number }) {
   )
 }
 
-/* ── 新規作成ページ ── */
+/* ── 新規作成ページ（/admin/settings/notices/new/） ── */
 export function NewNoticePage() {
   return <Guard requireAdmin><NoticeFormInner /></Guard>
 }
 
-/* ── 編集ページ ── */
+/* ── 編集ページ（/admin/settings/notices/edit/?id=123） ── */
+function EditNoticeInner() {
+  const sp = useSearchParams()
+  const id = Number(sp.get("id") ?? 0)
+  return <NoticeFormInner noticeId={id || undefined} />
+}
+
 export function EditNoticePage() {
-  const params = useParams()
-  const id = Number(params?.id)
-  return <Guard requireAdmin><NoticeFormInner noticeId={id} /></Guard>
+  return (
+    <Guard requireAdmin>
+      <Suspense fallback={<div style={{ padding: 32, textAlign: "center", color: "#89adb8" }}>読み込み中…</div>}>
+        <EditNoticeInner />
+      </Suspense>
+    </Guard>
+  )
 }
 
 export default NewNoticePage
