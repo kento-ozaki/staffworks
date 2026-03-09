@@ -47,3 +47,6 @@ cookie.txt
 
 # APIの環境変数設定（パスワードが含まれるためコミットしない）
 /api/.htaccess
+
+# ログファイル
+*.log

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react"
 import { me, logout, type User } from "@/lib/auth"
-import type { ApiNg } from "@/lib/api"
 import { toUserMessage } from "@/lib/errors"
 
 type BottomNavItem = { href: string; label: string; icon: string }
@@ -49,16 +48,7 @@ function isChangePasswordPath(pathname: string): boolean {
   return pathname.startsWith("/change-password")
 }
 
-function isUserLike(v: unknown): v is User {
-  return !!v && typeof v === "object" && "role" in v && "id" in v
-}
-
-function isApiNg(v: unknown): v is ApiNg {
-  return typeof v === "object" && v !== null && "ok" in v
-}
-
 function toErrorMessage(e: unknown): string {
-  if (isApiNg(e)) return toUserMessage(e)
   if (e instanceof Error) return e.message
   if (typeof e === "string") return e
   return "エラーが発生しました"
@@ -110,13 +100,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (authFree || isChangePassword || isOpen) return
     let cancelled = false
     ;(async () => {
-      try {
-        const res: unknown = await me()
-        // me() の戻りが User 直返し or { user: User } の両方に対応
-        const user = isUserLike(res) ? res : isUserLike((res as any)?.user) ? (res as any).user : null
-        if (!cancelled) setMeUser(user)
-      } catch {
-        if (!cancelled) setMeUser(null)
+      const res = await me()
+      if (cancelled) return
+      if (res.ok) {
+        setMeUser(res.user)
+      } else {
+        // 認証失敗・ネットワークエラー時は null のまま（ログアウト状態扱い）
+        setMeUser(null)
       }
     })()
     return () => {
@@ -561,7 +551,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     boxShadow: active
                       ? "0 0 0 1px rgba(255,255,255,0.15) inset, 0 4px 16px rgba(0,0,0,0.3)"
                       : "none",
-                    // animation: none
                   }}
                 >
                   {/* アイコン — バウンスアニメーション */}
