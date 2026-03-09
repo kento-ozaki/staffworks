@@ -504,7 +504,7 @@ function HomeInner() {
         ) : (
           <>
             {notices.slice(0, 3).map((n, i) => (
-              <Link key={n.id} href="/notices/" style={{textDecoration:"none"}} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`,display:"block"}}>
+              <Link key={n.id} href="/notices/" className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`,display:"block",textDecoration:"none"}}>
                 <div className="notice-inner">
                   <div className="notice-stripe" style={{background: n.is_pinned ? "#e53935" : "#006284"}}/>
                   <div className="notice-body">
