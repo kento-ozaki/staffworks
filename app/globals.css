@@ -1,32 +1,11 @@
-/* globals.css - mobile-first base styles */
-
-/*
-  ── テキストサイズの自動調整を無効化 ────────────────────────────────
-  -webkit-text-size-adjust : iOS Safari / 旧 Android
-  -moz-text-size-adjust    : Firefox (旧バージョン)
-  text-size-adjust         : 標準プロパティ（Chrome 等）
-  100% を指定することで、端末・OS のアクセシビリティ設定や
-  ブラウザのフォントサイズ設定による自動拡大を抑止する。
-  ※ ユーザーの明示的な Ctrl+ズーム は ZoomBlocker で別途制御済み。
-*/
 html {
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
 
-  /*
-    font-size を px で固定する。
-    rem ベースのレイアウトはこの値を基準にするため、
-    ブラウザのデフォルトフォントサイズ設定（例: 20px に変更済みの端末）
-    の影響を受けなくなる。
-  */
+
   font-size: 16px;
 
-  /*
-    PC で横スクロールが発生しても 320px 未満に縮まないようにする。
-    min-width を html に設定することで、ビューポートが狭い場合でも
-    レイアウトが崩れず、320px を下限として横スクロールで対応できる。
-  */
   min-width: 320px;
 }
 
@@ -42,8 +21,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-
-  /* body も min-width を保持してスクロール基準にする */
   min-width: 320px;
 }
 
@@ -72,7 +49,7 @@ textarea { resize: vertical; }
 .sw-card {
   border: 1px solid #eee;
   border-radius: 16px;
-  background: #fff;
+  background: #ffffff;
 }
 
 .sw-muted { color: #555; font-size: 12px; }
