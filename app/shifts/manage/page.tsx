@@ -154,32 +154,34 @@ html { -webkit-text-size-adjust: 100%; }
 .field-input{width:100%;height:38px;border-radius:8px;border:1.5px solid #d8eaee;padding:0 12px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:#0c1d24;background:#f8fbfc;outline:none;-webkit-appearance:none;}
 .field-input:focus{border-color:#006284;background:#fff;}
 
-/* ── スタッフセレクト（プルダウン） ── */
-.staff-select-wrap { position: relative; }
-.staff-select-wrap::after {
-  content: '▼'; font-size: 10px; color: #89adb8;
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  pointer-events: none;
-}
-.staff-select {
-  width: 100%; height: 42px; border-radius: 9px;
-  border: 1.5px solid #d8eaee; padding: 0 36px 0 12px;
-  font-size: 14px; font-family: 'Noto Sans JP', sans-serif;
-  color: #0c1d24; background: #f8fbfc;
-  outline: none; -webkit-appearance: none; cursor: pointer;
-  transition: border-color .12s;
-}
-.staff-select:focus { border-color: #006284; background: #fff; }
-.staff-select.has-value { border-color: #006284; background: #eaf4f8; color: #006284; font-weight: 700; }
+/* ── ステップラベル ── */
+.step-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:#89adb8;letter-spacing:.08em;font-family:'Noto Sans JP',sans-serif;margin-bottom:8px;}
+.step-num{width:18px;height:18px;border-radius:50%;background:#006284;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-num.done{background:#9fd0b5;}
 
-/* ── 提出バッジ ── */
-.submitted-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  margin-top: 6px; padding: 3px 9px; border-radius: 6px;
-  background: #eaf5ee; border: 1px solid #9fd0b5;
-  font-size: 11px; font-weight: 700; color: #1a6640;
-  font-family: 'Noto Sans JP', sans-serif;
-}
+/* ── 提出候補カード ── */
+.candidate-card{border:1.5px solid #d8eaee;border-radius:10px;background:#f8fbfc;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .12s,background .12s;}
+.candidate-card:active{opacity:.85;}
+.candidate-card.selected{border-color:#006284;background:#eaf4f8;}
+.candidate-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px;gap:8px;}
+.candidate-name{font-size:14px;font-weight:700;color:#0c1d24;font-family:'Noto Sans JP',sans-serif;}
+.badge-submitted{font-size:10px;font-weight:700;color:#1a6640;background:#eaf5ee;border:1px solid #9fd0b5;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.badge-none{font-size:10px;font-weight:700;color:#89adb8;background:#f0f5f7;border:1px solid #d8eaee;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.candidate-chips{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 10px;}
+.chip{font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;font-family:'Noto Sans JP',sans-serif;}
+.chip.work{background:#e4f2f7;color:#006284;border:1px solid #bcd8e0;}
+.chip.lesson{background:#fdf6e0;color:#7a5400;border:1px solid #dfc060;}
+
+/* ── 選択済みスタッフバー ── */
+.selected-user-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#eaf4f8;border-radius:9px;border:1.5px solid #006284;}
+.selected-user-name{font-size:15px;font-weight:700;color:#006284;font-family:'Noto Sans JP',sans-serif;}
+
+/* ── 反映ボタン ── */
+.apply-btn{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border-radius:7px;border:1.5px solid #bcd8e0;background:#e4f2f7;color:#006284;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-bottom:10px;}
+.apply-btn:active{opacity:.8;}
+
+/* ── 提出バッジ (後方互換) ── */
+.submitted-badge{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 9px;border-radius:6px;background:#eaf5ee;border:1px solid #9fd0b5;font-size:11px;font-weight:700;color:#1a6640;font-family:'Noto Sans JP',sans-serif;}
 
 /* ── ボタン ── */
 .btn-primary{height:42px;border-radius:10px;border:none;background:#006284;color:#fff;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
@@ -623,122 +625,191 @@ export default function ShiftsManagePage() {
                 {shiftId && <button className="btn-outline btn-sm" onClick={() => resetShiftForm()}>新規登録に戻す</button>}
               </div>
 
-              {/* 日付 */}
+              {/* ── STEP① 日付選択 ── */}
               <div className="field">
-                <div className="field-label">日付</div>
-                <select value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="field-input" style={{ cursor:"pointer" }}>
+                <div className="step-label">
+                  <span className={`step-num${selectedDate ? " done" : ""}`}>1</span>
+                  日付を選択
+                </div>
+                <select
+                  value={selectedDate}
+                  onChange={e => { setSelectedDate(e.target.value); setSelectedUserId(0); setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }]) }}
+                  className="field-input"
+                  style={{ cursor:"pointer" }}
+                >
                   {dateOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
 
-              {/* ① スタッフ — プルダウン形式に変更 */}
+              {/* ── STEP② その日の提出データ一覧 ── */}
               <div className="field">
-                <div className="field-label">スタッフ</div>
-                {users.length === 0 ? (
-                  <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
-                ) : (
-                  <>
-                    <div className="staff-select-wrap">
-                      <select
-                        className={`staff-select${selectedUserId ? " has-value" : ""}`}
-                        value={selectedUserId || ""}
-                        onChange={e => setSelectedUserId(Number(e.target.value))}
+                <div className="step-label">
+                  <span className={`step-num${dayAvailableSubmissions.length > 0 ? " done" : ""}`}>2</span>
+                  {ymdToSlash(selectedDate)} のシフト希望
+                </div>
+
+                {/* 提出ありスタッフ */}
+                {dayAvailableSubmissions.length > 0 && (
+                  <div style={{ display:"grid", gap:8, marginBottom:8 }}>
+                    {dayAvailableSubmissions.map(x => (
+                      <div
+                        key={x.user.id}
+                        className={`candidate-card${selectedUserId === x.user.id ? " selected" : ""}`}
+                        onClick={() => {
+                          setSelectedUserId(x.user.id)
+                          // 提出データを勤務・授業に自動反映
+                          if (x.staff.length > 0) { setShiftStart(x.staff[0].start); setShiftEnd(x.staff[0].end) }
+                          if (x.lessons.length > 0) { setLessonFields(x.lessons.map(l => ({ start:l.start, end:l.end, note:l.note||"" }))) }
+                          else { setLessonFields([{ start:"", end:"", note:"" }]) }
+                        }}
                       >
-                        <option value="">スタッフを選択してください</option>
-                        {users.map(u => (
-                          <option key={u.id} value={u.id}>
-                            {u.username}{submittedUserIds.has(u.id) ? " ✅ 提出済み" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {selectedUserId > 0 && submittedUserIds.has(selectedUserId) && (
-                      <div className="submitted-badge">✅ {monthLabel(cursor)} 提出済み</div>
+                        <div className="candidate-header">
+                          <span className="candidate-name">{x.user.username}</span>
+                          <span className="badge-submitted">✅ 提出済み</span>
+                        </div>
+                        <div className="candidate-chips">
+                          {x.staff.map((s, j) => (
+                            <span key={`s${j}`} className="chip work">🕐 {formatTimeRange(s.start, s.end)}</span>
+                          ))}
+                          {x.lessons.map((l, j) => (
+                            <span key={`l${j}`} className="chip lesson">📚 {formatTimeRange(l.start, l.end)}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 提出なしスタッフ（提出あり以外の全ユーザー） */}
+                {users.filter(u => !dayAvailableSubmissions.some(x => x.user.id === u.id)).length > 0 && (
+                  <div style={{ display:"grid", gap:6 }}>
+                    {dayAvailableSubmissions.length > 0 && (
+                      <div style={{ fontSize:11, color:"#b8d0da", fontWeight:700, fontFamily:"'Noto Sans JP',sans-serif", padding:"2px 0" }}>未提出</div>
                     )}
-                  </>
+                    {users
+                      .filter(u => !dayAvailableSubmissions.some(x => x.user.id === u.id))
+                      .map(u => (
+                        <div
+                          key={u.id}
+                          className={`candidate-card${selectedUserId === u.id ? " selected" : ""}`}
+                          onClick={() => { setSelectedUserId(u.id); setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }]) }}
+                        >
+                          <div className="candidate-header">
+                            <span className="candidate-name">{u.username}</span>
+                            <span className="badge-none">未提出</span>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+
+                {users.length === 0 && (
+                  <div style={{ fontSize:13, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>スタッフ情報を取得中…</div>
                 )}
               </div>
 
-              {/* 提出状況プレビュー */}
-              {selectedUserId > 0 && (
-                <div className="field">
-                  <div className="field-label">提出希望（{ymdToSlash(selectedDate)}）</div>
-                  {dayAvailableSubmissions.filter(x => x.user.id === selectedUserId).length === 0
-                    ? <div style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>提出データなし</div>
-                    : dayAvailableSubmissions.filter(x => x.user.id === selectedUserId).map((x, i) => (
-                      <div key={i} style={{ fontSize:12, color:"#3b6878", fontFamily:"'Noto Sans JP',sans-serif" }}>
-                        {x.staff.map((s,j)   => <div key={j}>勤務: {formatTimeRange(s.start, s.end)}</div>)}
-                        {x.lessons.map((l,j) => <div key={j}>授業: {formatTimeRange(l.start, l.end)}</div>)}
+              {/* ── STEP③〜⑤ スタッフ選択後に展開 ── */}
+              {selectedUserId > 0 && (() => {
+                const subData = dayAvailableSubmissions.find(x => x.user.id === selectedUserId)
+                const selUser = users.find(u => u.id === selectedUserId)
+                return (
+                  <>
+                    {/* STEP③ 選択スタッフ確認バー */}
+                    <div className="field" style={{ background:"#f0f8fb" }}>
+                      <div className="step-label">
+                        <span className="step-num done">3</span>
+                        登録するスタッフ
                       </div>
-                    ))
-                  }
-                </div>
-              )}
-
-              {/* 提出済みユーザーのセレクト（提出データがある場合） */}
-              {selectedUserId > 0 && dayAvailableSubmissions.length > 0 && (
-                <div className="field">
-                  <div className="field-label">提出者から選択して反映</div>
-                  <select
-                    className="field-input"
-                    style={{ cursor:"pointer", color: selectedUserId ? "#0c1d24" : "#89adb8" }}
-                    value={selectedUserId}
-                    onChange={e => setSelectedUserId(Number(e.target.value))}
-                  >
-                    {dayAvailableSubmissions.map(x => (
-                      <option key={x.user.id} value={x.user.id}>
-                        {x.user.username}{submittedUserIds.has(x.user.id) ? "（提出済）":"（未提出）"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* 開始・終了 */}
-              <div className="field">
-                <div className="field-label">勤務開始</div>
-                <QuarterTimeSelect value={shiftStart} onChange={setShiftStart} />
-              </div>
-              <div className="field">
-                <div className="field-label">勤務終了</div>
-                <QuarterTimeSelect value={shiftEnd} onChange={setShiftEnd} />
-              </div>
-
-              {/* 授業枠 */}
-              <div className="field">
-                <div className="field-label">授業枠</div>
-                <div style={{ display:"grid", gap:10 }}>
-                  {lessonFields.map((lesson, i) => (
-                    <div key={i} className="lesson-card">
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span className="lesson-title">授業 {i + 1}</span>
-                        <button className="btn-outline btn-sm" onClick={() => removeLessonField(i)}>削除</button>
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:8, alignItems:"center" }}>
-                        <QuarterTimeSelect value={lesson.start} onChange={v => updateLessonField(i, "start", v)} />
-                        <span style={{ color:"#89adb8", fontWeight:700 }}>〜</span>
-                        <QuarterTimeSelect value={lesson.end}   onChange={v => updateLessonField(i, "end",   v)} />
+                      <div className="selected-user-bar">
+                        <span className="selected-user-name">{selUser?.username ?? ""}</span>
+                        <button
+                          className="btn-outline btn-sm"
+                          style={{ fontSize:11 }}
+                          onClick={() => { setSelectedUserId(0); setShiftStart("17:00"); setShiftEnd("22:00"); setLessonFields([{ start:"", end:"", note:"" }]) }}
+                        >
+                          選び直す
+                        </button>
                       </div>
                     </div>
-                  ))}
-                  <p style={{ fontSize:12, color:"#89adb8", fontFamily:"'Noto Sans JP',sans-serif" }}>
-                    ※ 提出済み授業があれば下のボタンで読み込めます
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                    <button className="btn-outline" onClick={addLessonField}>授業を追加</button>
-                    <button className="btn-outline" onClick={applyLessonsFromSubmission}>提出から読み込む</button>
-                  </div>
-                </div>
-              </div>
 
-              {/* 保存 */}
+                    {/* STEP④ 勤務時間 */}
+                    <div className="field">
+                      <div className="step-label">
+                        <span className="step-num">4</span>
+                        勤務時間
+                      </div>
+                      {subData && subData.staff.length > 0 && (
+                        <button
+                          className="apply-btn"
+                          onClick={() => { setShiftStart(subData.staff[0].start); setShiftEnd(subData.staff[0].end) }}
+                        >
+                          ↓ 提出データを反映（{formatTimeRange(subData.staff[0].start, subData.staff[0].end)}）
+                        </button>
+                      )}
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:10, alignItems:"end" }}>
+                        <div>
+                          <div style={{ fontSize:11, color:"#89adb8", fontWeight:700, fontFamily:"'Noto Sans JP',sans-serif", marginBottom:5 }}>開始</div>
+                          <QuarterTimeSelect value={shiftStart} onChange={setShiftStart} />
+                        </div>
+                        <span style={{ color:"#89adb8", fontWeight:700, paddingBottom:8 }}>〜</span>
+                        <div>
+                          <div style={{ fontSize:11, color:"#89adb8", fontWeight:700, fontFamily:"'Noto Sans JP',sans-serif", marginBottom:5 }}>終了</div>
+                          <QuarterTimeSelect value={shiftEnd} onChange={setShiftEnd} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* STEP⑤ 授業枠 */}
+                    <div className="field">
+                      <div className="step-label">
+                        <span className="step-num">5</span>
+                        授業枠（任意）
+                      </div>
+                      {subData && subData.lessons.length > 0 && (
+                        <button className="apply-btn" onClick={applyLessonsFromSubmission}>
+                          ↓ 提出データから読み込む（{subData.lessons.length}件）
+                        </button>
+                      )}
+                      <div style={{ display:"grid", gap:10 }}>
+                        {lessonFields.map((lesson, i) => (
+                          <div key={i} className="lesson-card">
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                              <span className="lesson-title">授業 {i + 1}</span>
+                              <button className="btn-outline btn-sm" onClick={() => removeLessonField(i)}>削除</button>
+                            </div>
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:8, alignItems:"center" }}>
+                              <QuarterTimeSelect value={lesson.start} onChange={v => updateLessonField(i, "start", v)} />
+                              <span style={{ color:"#89adb8", fontWeight:700 }}>〜</span>
+                              <QuarterTimeSelect value={lesson.end}   onChange={v => updateLessonField(i, "end",   v)} />
+                            </div>
+                          </div>
+                        ))}
+                        <button className="btn-outline" onClick={addLessonField}>＋ 授業を追加</button>
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* 保存ボタン */}
               <div className="field">
-                <button className="btn-primary" style={{ width:"100%" }} disabled={savingShift} onClick={saveShift}>
+                <button
+                  className="btn-primary"
+                  style={{ width:"100%" }}
+                  disabled={savingShift || !selectedUserId}
+                  onClick={saveShift}
+                >
                   {savingShift
                     ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" style={{ animation:"spin .8s linear infinite" }}><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>保存中…</>
                     : (shiftId ? "更新する" : "登録する")
                   }
                 </button>
+                {!selectedUserId && (
+                  <p style={{ fontSize:11, color:"#b8d0da", textAlign:"center", marginTop:6, fontFamily:"'Noto Sans JP',sans-serif" }}>
+                    ↑ スタッフを選択してください
+                  </p>
+                )}
               </div>
             </div>
 
