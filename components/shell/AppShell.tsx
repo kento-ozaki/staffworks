@@ -26,8 +26,8 @@ type SideNavItem = {
 
 const SIDE_NAV: SideNavItem[] = [
   { key: "page1", label: "お知らせ一覧", href: "/home/", icon: "navi_notifications.svg" },
-  { key: "page2", label: "備品管理", icon: "equipment_manage.svg", maintenance: true },
-  { key: "page3", label: "清掃記録", icon: "clean.svg", maintenance: true },
+  { key: "page2", label: "備品管理", icon: "navi_equipment_manage.svg", maintenance: true },
+  { key: "page3", label: "清掃記録", icon: "navi_clean.svg", maintenance: true },
   { key: "page4", label: "リンク", icon: "link.svg", maintenance: true },
   { key: "page5", label: "ファイル共有", icon: "file.svg", maintenance: true },
   { key: "page6", label: "オンライン", icon: "zoom.svg", maintenance: true },
