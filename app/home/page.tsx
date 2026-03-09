@@ -94,7 +94,7 @@ const CSS = `
 
 .hero-date {
   display:flex; align-items:center; justify-content:space-between;
-  background:#f5f8fa; border-radius:14px; padding:14px 18px;
+  background:#ffffff; border-radius:14px; padding:14px 18px;
   animation:fadeUp 0.4s ease 0.1s both;
 }
 .hero-date-left { display:flex; align-items:baseline; gap:6px; }
