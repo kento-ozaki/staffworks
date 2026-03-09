@@ -286,7 +286,7 @@ function NoticesListInner() {
                       )}
                     </div>
                     <div className="notice-actions">
-                      <Link href={`/admin/settings/notices/${n.id}/`} className="btn-edit">
+                      <Link href={`/admin/settings/notices/edit/?id=${n.id}`} className="btn-edit">
                         編集
                       </Link>
                       <button
