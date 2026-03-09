@@ -163,13 +163,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
-  function canSee(item: SideNavItem): boolean {
-    if (!item.roles || item.roles.length === 0) return true
+  // ✅ [修正] canSee を独立関数として定義せず useMemo 内にインライン化。
+  //    これにより依存配列に meUser を明示でき、
+  //    ESLint exhaustive-deps 警告が解消される。
+  const visibleSideNav = useMemo(() => {
     const role = (meUser?.role as unknown as string) ?? ""
-    return item.roles.includes(role as any)
-  }
-
-  const visibleSideNav = useMemo(() => SIDE_NAV.filter(canSee), [meUser])
+    return SIDE_NAV.filter(item => {
+      if (!item.roles || item.roles.length === 0) return true
+      return item.roles.includes(role as any)
+    })
+  }, [meUser])
 
   function onMaintenanceClick(label: string) {
     setNotice(`「${label}」はメンテナンス中です。`)
