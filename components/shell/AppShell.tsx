@@ -25,7 +25,7 @@ type SideNavItem = {
 }
 
 const SIDE_NAV: SideNavItem[] = [
-  { key: "page1", label: "ホーム", href: "/home/", icon: "home.svg" },
+  { key: "page1", label: "お知らせ一覧", href: "/home/", icon: "navi_notifications.svg" },
   { key: "page2", label: "備品管理", icon: "equipment_manage.svg", maintenance: true },
   { key: "page3", label: "清掃記録", icon: "clean.svg", maintenance: true },
   { key: "page4", label: "リンク", icon: "link.svg", maintenance: true },
