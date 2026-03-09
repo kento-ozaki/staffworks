@@ -13,7 +13,7 @@ import { board, listMainCategories, type MainCategory, type TaskCard as T } from
  * 赤は期限超過・エラー専用
  */
 const C = {
-  bg:       "#f4f8fa",
+  bg:       "#f0f5f7",
   surface:  "#ffffff",
   brand:    "#006284",
   brandMid: "#004d66",
