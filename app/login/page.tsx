@@ -31,13 +31,10 @@ function LogoHeader() {
   )
 }
 
-export default function Page() {
-
-  const router = useRouter()
-  const [id, setId] = useState("")
-  const [pw, setPw] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+// ✅ [修正] コンポーネント内の中間から外側（トップレベル）へ移動。
+//    state や hooks を参照しない純粋なユーティリティ関数であるため、
+//    コンポーネントの外に定義するのが正しい。
+//    レンダリングのたびに再生成されるコストも解消される。
 // ログイン失敗時の表示文言はここで一元管理できます
 function toLoginErrorMessage(raw?: string | null): string {
   const s = (raw ?? "").toLowerCase().trim()
@@ -55,6 +52,14 @@ function toLoginErrorMessage(raw?: string | null): string {
   return "ログインに失敗しました。入力内容をご確認ください。"
 }
 
+export default function Page() {
+
+  const router = useRouter()
+  const [id, setId] = useState("")
+  const [pw, setPw] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -64,7 +69,8 @@ function toLoginErrorMessage(raw?: string | null): string {
       if (!res.ok) {
         setError(toLoginErrorMessage(res.error))
         return
-      }if (Number(res.user?.must_change_password ?? 0) === 1) {
+      }
+      if (Number(res.user?.must_change_password ?? 0) === 1) {
         router.replace("/change-password/")
       } else {
         router.replace("/home/")
