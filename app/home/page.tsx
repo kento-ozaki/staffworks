@@ -73,52 +73,51 @@ const CSS = `
 
 /* ━━━ ヒーロー ━━━ */
 .hero {
-  background:linear-gradient(145deg,#002e3f 0%,#005673 45%,#007aa3 100%);
-  padding:28px 20px 32px; position:relative; overflow:hidden;
+  background:#f0f5f7;
+  padding:24px 20px 20px;
+  border-bottom:1px solid #e8eef1;
 }
-.hero-orb {
-  position:absolute; border-radius:50%; pointer-events:none;
-}
-.hero-orb1 { top:-50px; right:-30px; width:220px; height:220px;
-  background:radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 65%); }
-.hero-orb2 { bottom:-30px; left:-20px; width:160px; height:160px;
-  background:radial-gradient(circle,rgba(0,220,255,0.06) 0%,transparent 65%); }
 
 .hero-greeting {
-  font-size:11px; font-weight:700; letter-spacing:0.12em;
-  color:rgba(255,255,255,0.5); text-transform:uppercase;
-  font-family:'Noto Sans JP',sans-serif; margin-bottom:3px;
+  font-size:11px; font-weight:700; letter-spacing:0.1em;
+  color:#8fa8b4; text-transform:uppercase;
+  font-family:'Noto Sans JP',sans-serif; margin-bottom:2px;
   animation:fadeUp 0.4s ease both;
 }
 .hero-name {
-  font-family:'DM Serif Display',serif;
-  font-size:27px; color:#fff; line-height:1.2;
-  letter-spacing:-0.01em; margin-bottom:22px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:20px; font-weight:700; color:#0c1d24; line-height:1.3;
+  margin-bottom:20px;
   animation:fadeUp 0.4s ease 0.05s both;
 }
-.hero-name em { font-style:italic; color:rgba(180,230,255,0.85); }
+.hero-name em { font-style:normal; color:#006284; }
 
-.hero-date { display:flex; align-items:flex-end; gap:10px; animation:fadeUp 0.4s ease 0.1s both; }
+.hero-date {
+  display:flex; align-items:center; justify-content:space-between;
+  background:#f5f8fa; border-radius:14px; padding:14px 18px;
+  animation:fadeUp 0.4s ease 0.1s both;
+}
+.hero-date-left { display:flex; align-items:baseline; gap:6px; }
 .hero-day {
   font-family:'DM Serif Display',serif;
-  font-size:72px; color:#fff; line-height:1; letter-spacing:-0.04em;
+  font-size:52px; color:#0c1d24; line-height:1; letter-spacing:-0.03em;
 }
-.hero-date-meta { display:flex; flex-direction:column; gap:1px; padding-bottom:8px; }
-.hero-ym  { font-size:12px; font-weight:700; letter-spacing:0.05em; color:rgba(255,255,255,0.55); font-family:'Noto Sans JP',sans-serif; }
-.hero-dow { font-size:24px; font-weight:700; color:#fff; font-family:'Noto Sans JP',sans-serif; line-height:1.1; }
-.hero-dow.sun { color:#ff8a80; }
-.hero-dow.sat { color:#80d8ff; }
+.hero-date-meta { display:flex; flex-direction:column; gap:2px; }
+.hero-ym  { font-size:11px; font-weight:700; letter-spacing:0.06em; color:#8fa8b4; font-family:'Noto Sans JP',sans-serif; }
+.hero-dow { font-size:18px; font-weight:700; color:#0c1d24; font-family:'Noto Sans JP',sans-serif; line-height:1.2; }
+.hero-dow.sun { color:#e53935; }
+.hero-dow.sat { color:#1565c0; }
 
-.hero-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:18px; animation:fadeUp 0.4s ease 0.18s both; }
+.hero-badges { display:flex; gap:6px; flex-wrap:wrap; flex-direction:column; align-items:flex-end; }
 .hbadge {
-  font-size:11px; font-weight:700; letter-spacing:0.03em;
-  padding:4px 11px; border-radius:999px;
-  font-family:'Noto Sans JP',sans-serif; backdrop-filter:blur(10px);
+  font-size:10px; font-weight:700; letter-spacing:0.03em;
+  padding:3px 10px; border-radius:6px;
+  font-family:'Noto Sans JP',sans-serif;
 }
-.hbadge-hol  { background:rgba(255,100,80,0.2);  color:#ffcdd2; border:1px solid rgba(255,100,80,0.28); }
-.hbadge-off  { background:rgba(186,104,200,0.2); color:#f3e5f5; border:1px solid rgba(186,104,200,0.28); }
-.hbadge-ev   { background:rgba(255,193,7,0.18);  color:#fff9e6; border:1px solid rgba(255,193,7,0.28); }
-.hbadge-norm { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.1); }
+.hbadge-hol  { background:#fdecea; color:#c62828; }
+.hbadge-off  { background:#f3e5f5; color:#6a1b9a; }
+.hbadge-ev   { background:#fff8e1; color:#e65100; }
+.hbadge-norm { background:#e8eef1; color:#8fa8b4; }
 
 /* ━━━ セクション ━━━ */
 .sec { padding:0 16px; margin-top:22px; animation:fadeUp 0.45s ease both; }
@@ -322,32 +321,30 @@ function HomeInner() {
 
       {/* ━━━ ヒーロー ━━━ */}
       <div className="hero">
-        <div className="hero-orb hero-orb1"/>
-        <div className="hero-orb hero-orb2"/>
-
         <div className="hero-greeting">{greetingText(hour)}</div>
         <div className="hero-name">
           {loading
-            ? <span style={{opacity:0.5}}>読み込み中…</span>
+            ? <span style={{opacity:0.4}}>読み込み中…</span>
             : <><em>{user?.username ?? "ゲスト"}</em> さん</>}
         </div>
 
         <div className="hero-date">
-          <div className="hero-day">{now.getDate()}</div>
-          <div className="hero-date-meta">
-            <div className="hero-ym">{now.getFullYear()} / {MONTH_JP[now.getMonth()]}</div>
-            <div className={`hero-dow${dow===0?" sun":dow===6?" sat":""}`}>{DOW_JP[dow]}曜日</div>
+          <div className="hero-date-left">
+            <div className="hero-day">{now.getDate()}</div>
+            <div className="hero-date-meta">
+              <div className="hero-ym">{now.getFullYear()} / {MONTH_JP[now.getMonth()]}</div>
+              <div className={`hero-dow${dow===0?" sun":dow===6?" sat":""}`}>{DOW_JP[dow]}曜日</div>
+            </div>
           </div>
-        </div>
-
-        <div className="hero-badges">
-          {!loading && <>
-            {holidayName && <span className="hbadge hbadge-hol">🎌 {holidayName}</span>}
-            {todayOff.map(o => <span key={o.id} className="hbadge hbadge-off">📅 教室長公休</span>)}
-            {events.map(ev => <span key={ev.id} className="hbadge hbadge-ev">📌 {ev.title}</span>)}
-            {!holidayName && todayOff.length===0 && events.length===0 &&
-              <span className="hbadge hbadge-norm">通常営業日</span>}
-          </>}
+          <div className="hero-badges">
+            {!loading && <>
+              {holidayName && <span className="hbadge hbadge-hol">🎌 {holidayName}</span>}
+              {todayOff.map(o => <span key={o.id} className="hbadge hbadge-off">📅 公休</span>)}
+              {events.map(ev => <span key={ev.id} className="hbadge hbadge-ev">📌 {ev.title}</span>)}
+              {!holidayName && todayOff.length===0 && events.length===0 &&
+                <span className="hbadge hbadge-norm">通常営業日</span>}
+            </>}
+          </div>
         </div>
       </div>
 
