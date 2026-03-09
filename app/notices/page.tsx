@@ -110,28 +110,18 @@ body { background: ${C.bg}; }
 .modal-overlay {
   position:fixed; inset:0; z-index:100;
   background:rgba(12,29,36,.45);
-  display:flex; align-items:flex-end; justify-content:center;
-  padding:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
   animation:fadeIn .18s ease both;
 }
-@media (min-width:560px) {
-  .modal-overlay { align-items:center; padding:24px; }
-}
 .modal-sheet {
-  background:${C.card}; border-radius:20px 20px 0 0;
-  width:100%; max-width:600px;
-  max-height:88vh; display:flex; flex-direction:column;
+  background:${C.card}; border-radius:20px;
+  width:100%; max-width:560px;
+  max-height:82vh; display:flex; flex-direction:column;
   overflow:hidden;
   animation:slideUp .22s cubic-bezier(.22,1,.36,1) both;
 }
-@media (min-width:560px) {
-  .modal-sheet { border-radius:20px; max-height:80vh; }
-}
-.modal-handle {
-  width:36px; height:4px; border-radius:2px;
-  background:${C.line}; margin:12px auto 4px; flex-shrink:0;
-}
-@media (min-width:560px) { .modal-handle { display:none; } }
+.modal-handle { display:none; }
 .modal-header {
   padding:14px 16px 12px; border-bottom:1px solid ${C.line};
   display:flex; align-items:flex-start; gap:12px; flex-shrink:0;
