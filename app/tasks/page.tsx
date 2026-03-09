@@ -7,11 +7,6 @@ import type { ApiNg } from "@/lib/api"
 import { toUserMessage } from "@/lib/errors"
 import { board, listMainCategories, type MainCategory, type TaskCard as T } from "@/lib/tasks"
 
-/*
- * カラーパレット — #006284 一色支配
- * 背景: オフホワイト / テキスト: 深いネイビー / アクセント: #006284 のみ
- * 赤は期限超過・エラー専用
- */
 const C = {
   bg:       "#f0f5f7",
   surface:  "#ffffff",
@@ -27,10 +22,9 @@ const C = {
   dangerLine:"#e8b4b4",
 } as const
 
-const FH = `'Outfit', 'Noto Sans JP', sans-serif`   // 見出し
-const FB = `'Noto Sans JP', 'Outfit', sans-serif`    // 本文
+const FH = `'Outfit', 'Noto Sans JP', sans-serif`
+const FB = `'Noto Sans JP', 'Outfit', sans-serif`
 
-/* ── ユーティリティ ─────────────────────────────────────────── */
 function today() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
@@ -42,7 +36,6 @@ function fmtDue(due: string | null) {
   return `${d.getMonth()+1}/${d.getDate()}`
 }
 
-/* ── タスクカード ────────────────────────────────────────────── */
 function TaskCard({ task }: { task: T }) {
   const [hover, setHover] = useState(false)
   const overdue = isOverdue(task.due_date)
@@ -106,7 +99,6 @@ function TaskCard({ task }: { task: T }) {
   )
 }
 
-/* ── ボードメイン ─────────────────────────────────────────────── */
 function BoardInner() {
   const [tab, setTab] = useState<"todo" | "doing">("todo")
   const [todo, setTodo] = useState<T[]>([])
