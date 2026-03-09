@@ -13,6 +13,7 @@ type Shift        = { id: number; staff_user_id: number; staff_username: string;
 type CalendarEvent= { id: number; event_date: string; title: string; note?: string | null }
 type ManagerDayOff= { id: number; off_date: string; label: string; note?: string | null }
 type Task         = { id: number; title: string; due_date: string | null; status: "todo"|"doing"; main_category_name: string }
+type Notice       = { id: number; title: string; body: string; sender_name: string; is_pinned: 0|1; published_at: string; expires_at: string | null }
 
 // ── ユーティリティ ────────────────────────────────────────────────
 function ymd(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}` }
@@ -245,6 +246,7 @@ function HomeInner() {
   const [holidayName, setHolidayName] = useState<string|null>(null)
   const [loading,     setLoading]     = useState(true)
   const [tasks,       setTasks]       = useState<Task[]>([])
+  const [notices,     setNotices]     = useState<Notice[]>([])
 
 
 
@@ -259,13 +261,14 @@ function HomeInner() {
     let alive = true
     ;(async () => {
       try {
-        const [meRes, shiftRes, evRes, offRes, holRes, boardRes] = await Promise.all([
+        const [meRes, shiftRes, evRes, offRes, holRes, boardRes, noticeRes] = await Promise.all([
           apiGet<{user:User}>("/me.php"),
           apiGet<{shifts:Shift[]}>(`/api/shift_list.php?from=${today}&to=${today}`),
           apiGet<{events:CalendarEvent[]}>(`calendar_events_list.php?from=${today}&to=${today}`),
           apiGet<{days_off:ManagerDayOff[]}>(`manager_days_off_list.php?from=${today}&to=${today}`),
           apiGet<{holidays:{date:string;name:string}[]}>(`holidays_list.php?from=${today}&to=${today}`),
           apiGet<{todo:Task[];doing:Task[]}>("tasks_board.php"),
+          apiGet<{notices:Notice[]}>("notices_list.php"),
         ])
         if (!alive) return
         setUser(meRes.user)
@@ -285,6 +288,7 @@ function HomeInner() {
           return (a.due_date||"").localeCompare(b.due_date||"")
         })
         setTasks(allTasks)
+        setNotices(noticeRes.notices || [])
       } catch(e: any) {
         if (!alive) return
         if (String(e?.message||"").includes("unauthorized")) router.push("/login/")
@@ -478,51 +482,45 @@ function HomeInner() {
       <div className="sec" style={{animationDelay:"0.3s"}}>
         <div className="sec-hdr">
           <span className="sec-title">お知らせ</span>
-          <span className="sec-badge">3</span>
+          {!loading && notices.length > 0 && <span className="sec-badge">{notices.length}</span>}
         </div>
 
-        {/* ピン留め：重要 */}
-        {[
-          {
-            id:1, pinned:true, isNew:true,
-            stripe:"#e53935",
-            title:"📌 冷暖房の設定温度について",
-            body:"夏季の冷房は26℃を基準にしてください。節電のため退室時は必ず電源をお切りください。",
-            from:"教室長", date:"2026/03/06",
-          },
-          {
-            id:2, pinned:false, isNew:true,
-            stripe:"#006284",
-            title:"3月の全体ミーティングについて",
-            body:"3月14日（金）18:30〜 オンラインにて実施します。参加URLは別途送付します。",
-            from:"管理者", date:"2026/03/05",
-          },
-          {
-            id:3, pinned:false, isNew:false,
-            stripe:"#8fa8b4",
-            title:"備品補充リストの更新",
-            body:"文房具・コピー用紙の在庫が少なくなっています。使用後は在庫管理表を更新してください。",
-            from:"管理者", date:"2026/03/01",
-          },
-        ].map((n, i) => (
-          <div key={n.id} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`}}>
-            <div className="notice-inner">
-              <div className="notice-stripe" style={{background:n.stripe}}/>
-              <div className="notice-body">
-                <div className="notice-top">
-                  <span className="notice-title">{n.title}</span>
-                  {n.isNew && <span className="notice-new">NEW</span>}
-                </div>
-                <div className="notice-text">{n.body}</div>
-                <div className="notice-meta">
-                  {n.pinned && <span className="notice-pin">📌 重要</span>}
-                  <span className="notice-from">{n.from}</span>
-                  <span className="notice-date">{n.date}</span>
+        {loading ? (
+          [0,1].map(i => (
+            <div key={i} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`}}>
+              <div className="notice-inner">
+                <div className="notice-stripe" style={{background:"#d8eaee"}}/>
+                <div className="notice-body" style={{gap:8}}>
+                  <div className="shimmer" style={{height:14,width:"70%",borderRadius:6}}/>
+                  <div className="shimmer" style={{height:11,width:"90%",borderRadius:6}}/>
                 </div>
               </div>
             </div>
+          ))
+        ) : notices.length === 0 ? (
+          <div className="empty">
+            <p>お知らせはありません</p>
           </div>
-        ))}
+        ) : (
+          notices.map((n, i) => (
+            <div key={n.id} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`}}>
+              <div className="notice-inner">
+                <div className="notice-stripe" style={{background: n.is_pinned ? "#e53935" : "#006284"}}/>
+                <div className="notice-body">
+                  <div className="notice-top">
+                    <span className="notice-title">{n.is_pinned ? "📌 " : ""}{n.title}</span>
+                  </div>
+                  <div className="notice-text">{n.body}</div>
+                  <div className="notice-meta">
+                    {n.is_pinned === 1 && <span className="notice-pin">📌 重要</span>}
+                    <span className="notice-from">{n.sender_name}</span>
+                    <span className="notice-date">{n.published_at.replaceAll("-", "/")}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* ━━━ タスク概要 ━━━ */}
