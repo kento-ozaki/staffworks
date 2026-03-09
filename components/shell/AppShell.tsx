@@ -28,12 +28,11 @@ const SIDE_NAV: SideNavItem[] = [
   { key: "page1", label: "お知らせ一覧", href: "/home/", icon: "navi_notifications.svg" },
   { key: "page2", label: "備品管理", icon: "navi_equipment_manage.svg", maintenance: true },
   { key: "page3", label: "清掃記録", icon: "navi_clean.svg", maintenance: true },
-  { key: "page4", label: "リンク", icon: "link.svg", maintenance: true },
-  { key: "page5", label: "ファイル共有", icon: "file.svg", maintenance: true },
-  { key: "page6", label: "オンライン", icon: "zoom.svg", maintenance: true },
-  { key: "page7", label: "シフト希望提出", href: "/shifts/submit/", icon: "shift_submissions.svg" },
-  // leader も許可（User.role に leader が無い可能性があるので string で許容）
-  { key: "page8", label: "シフト管理", href: "/shifts/manage/" ,icon: "shift_manage.svg", roles: ["admin", "leader"] },
+  { key: "page4", label: "リンク", icon: "navi_link.svg", maintenance: true },
+  { key: "page5", label: "ファイル共有", icon: "navi_file.svg", maintenance: true },
+  { key: "page6", label: "オンライン", icon: "navi_zoom.svg", maintenance: true },
+  { key: "page7", label: "シフト希望提出", href: "/shifts/submit/", icon: "navi_shift_submissions.svg" },
+  { key: "page8", label: "シフト管理", href: "/shifts/manage/" ,icon: "navi_shift_manage.svg", roles: ["admin", "leader"] },
   { key: "page9", label: "アカウント管理", href: "/admin/users/", icon: "account_manage.svg", roles: ["admin"] },
   { key: "page10", label: "アプリ設定", href: "/admin/settings/notices/", icon: "app_setting.svg", roles: ["admin"] },
 ]
