@@ -502,24 +502,33 @@ function HomeInner() {
             <p>お知らせはありません</p>
           </div>
         ) : (
-          notices.map((n, i) => (
-            <div key={n.id} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`}}>
-              <div className="notice-inner">
-                <div className="notice-stripe" style={{background: n.is_pinned ? "#e53935" : "#006284"}}/>
-                <div className="notice-body">
-                  <div className="notice-top">
-                    <span className="notice-title">{n.is_pinned ? "📌 " : ""}{n.title}</span>
-                  </div>
-                  <div className="notice-text">{n.body}</div>
-                  <div className="notice-meta">
-                    {n.is_pinned === 1 && <span className="notice-pin">📌 重要</span>}
-                    <span className="notice-from">{n.sender_name}</span>
-                    <span className="notice-date">{n.published_at.replaceAll("-", "/")}</span>
+          <>
+            {notices.slice(0, 3).map((n, i) => (
+              <Link key={n.id} href="/notices/" style={{textDecoration:"none"}} className="notice-card" style={{animationDelay:`${0.32+i*0.07}s`,display:"block"}}>
+                <div className="notice-inner">
+                  <div className="notice-stripe" style={{background: n.is_pinned ? "#e53935" : "#006284"}}/>
+                  <div className="notice-body">
+                    <div className="notice-top">
+                      <span className="notice-title">{n.is_pinned ? "📌 " : ""}{n.title}</span>
+                    </div>
+                    <div className="notice-text">{n.body}</div>
+                    <div className="notice-meta">
+                      {n.is_pinned === 1 && <span className="notice-pin">📌 重要</span>}
+                      <span className="notice-from">{n.sender_name}</span>
+                      <span className="notice-date">{n.published_at.replaceAll("-", "/")}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))
+              </Link>
+            ))}
+            {notices.length > 3 && (
+              <Link href="/notices/" style={{display:"block",textDecoration:"none"}}>
+                <div style={{textAlign:"center",padding:"10px 0",fontSize:11,fontWeight:700,color:"#006284",fontFamily:"'Noto Sans JP',sans-serif"}}>
+                  ＋ 残り{notices.length - 3}件のお知らせを見る
+                </div>
+              </Link>
+            )}
+          </>
         )}
       </div>
 
