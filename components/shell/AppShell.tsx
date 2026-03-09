@@ -176,20 +176,23 @@ export function AppShell({ children }: { children: ReactNode }) {
       `}</style>
 
       {/* Header */}
+      {/* position: fixed + left/right:0 に変更。
+          旧: position:sticky + width:100vw + marginLeft:calc(50%-50vw)
+          → CSS zoom 適用時に vw の計算基準がズレてヘッダーが途中で切れる問題を修正。
+          fixed にすることで zoom の影響を受けず常に画面全幅に固定される。
+          その分 main に paddingTop を追加してコンテンツが隠れないようにする。 */}
       {showShell && (
         <header
           style={{
-            position: "sticky",
+            position: "fixed",
             top: 0,
+            left: 0,
+            right: 0,
             zIndex: 20,
-            width: "100vw",
-            marginLeft: "calc(50% - 50vw)",
             height: 64,
             padding: "0 16px",
             boxSizing: "border-box",
-            borderBottom: "none",
             background: "#006284",
-            paddingBottom: "env(safe-area-inset-bottom)",
             display: "flex",
             alignItems: "center",
           }}
@@ -418,9 +421,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Main */}
+      {/* paddingTop: 64px を追加。ヘッダーが fixed になったため、その高さ分コンテンツが隠れないようにオフセットする。 */}
       <main
         style={{
           padding: 0,
+          paddingTop: showShell ? 64 : 0,
           paddingBottom: showShell ? "calc(84px + env(safe-area-inset-bottom))" : 0,
           pointerEvents: showShell && open ? "none" : "auto",
         }}
