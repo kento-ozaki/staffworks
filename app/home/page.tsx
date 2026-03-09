@@ -524,7 +524,7 @@ function HomeInner() {
             {notices.length > 3 && (
               <Link href="/notices/" style={{display:"block",textDecoration:"none"}}>
                 <div style={{textAlign:"center",padding:"10px 0",fontSize:11,fontWeight:700,color:"#006284",fontFamily:"'Noto Sans JP',sans-serif"}}>
-                  ＋ 残り{notices.length - 3}件のお知らせを見る
+                  + 残り{notices.length - 3}件のお知らせを見る
                 </div>
               </Link>
             )}
