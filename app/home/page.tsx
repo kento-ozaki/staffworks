@@ -161,7 +161,7 @@ const CSS = `
 .lesson-chips { display:flex; gap:5px; flex-wrap:wrap; }
 .lchip {
   font-size:10px; font-weight:700; color:#4b6070;
-  background:#eef4f7; border:1px solid #dde8ed;
+  background:#eef4f7; border:1px solid #ffffff;
   border-radius:6px; padding:2px 8px; font-family:'Noto Sans JP',sans-serif;
   display:flex; align-items:center; gap:4px;
 }
