@@ -5,5 +5,4 @@ export default function AdminNewRedirect() {
   const router = useRouter()
   useEffect(() => { router.replace("/admin/users/new/") }, [])
   return null
-  
 }
