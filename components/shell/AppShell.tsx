@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F1F1F1" }}>
+    <div style={{ minHeight: "100%", background: "#F1F1F1" }}> {/* 旧: 100vh → zoom適用時のズレを避けるため100%に変更 */}
       <style>{`
         html, body { overflow-x: hidden; max-width: 100%; }
         * { scrollbar-width: none; }
@@ -271,7 +271,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             position: "fixed",
             top: 0,
             left: 0,
-            height: "100dvh",
+            bottom: 0,           /* height: 100dvh の代替。zoom 適用時に dvh がズレる問題を修正 */
             width: drawerWidth,
             background: "#006284",
             paddingBottom: "env(safe-area-inset-bottom)",
