@@ -130,7 +130,7 @@ function NewInner() {
       </header>
 
       {/* ── フォーム ── */}
-      <main style={{ padding:"16px 14px 56px" }}>
+      <main style={{ paddingTop:"16px", paddingLeft:"14px", paddingRight:"14px", paddingBottom:"calc(var(--nav-h) + 16px + var(--safe-b))" }}>
         {error && <ErrBar msg={error}/>}
         <form onSubmit={onSubmit}>
           <div style={{

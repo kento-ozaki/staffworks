@@ -170,7 +170,7 @@ function DoneInner() {
       </header>
 
       {/* ── コンテンツ ── */}
-      <main style={{ padding:"14px 14px 64px" }}>
+      <main style={{ paddingTop:"14px", paddingLeft:"14px", paddingRight:"14px", paddingBottom:"calc(var(--nav-h) + 16px + var(--safe-b))" }}>
         {!isAdmin && (
           <div style={{
             background:C.surface, border:`1px solid ${C.strokeSoft}`,

@@ -51,6 +51,10 @@ export const FB = `'Inter', 'Noto Sans JP', sans-serif`
 export const FM = `'Fira Code', 'JetBrains Mono', monospace`
 
 export const GLOBAL_CSS = `
+:root {
+  --nav-h: 84px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -512,7 +516,7 @@ function BoardInner() {
       </header>
 
       {/* ══ CONTENT ══ */}
-      <main style={{ padding:"16px 14px 64px" }}>
+      <main style={{ paddingTop:"16px", paddingLeft:"14px", paddingRight:"14px", paddingBottom:"calc(var(--nav-h) + 16px + var(--safe-b))" }}>
         {error && <ErrBar msg={error}/>}
 
         {loading && list.length===0 && (
