@@ -142,10 +142,10 @@ function ProgressSheet({ openSubs, loading, error, onClose, onSubmit }: SheetPro
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
       <div className="sheet" style={{
-        position:"fixed", bottom:"var(--nav-h)", left:0, right:0, zIndex:400,
+        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
-        maxHeight:"calc(88vh - var(--nav-h))", display:"flex", flexDirection:"column", overflow:"hidden",
+        maxHeight:"88vh", display:"flex", flexDirection:"column", overflow:"hidden",
       }}>
         {/* ヘッダー */}
         <div style={{ padding:"10px 18px 14px", borderBottom:`1px solid ${C.strokeSoft}`, flexShrink:0 }}>
@@ -267,7 +267,7 @@ function ProgressSheet({ openSubs, loading, error, onClose, onSubmit }: SheetPro
         </div>
 
         {/* 固定フッター */}
-        <div style={{ paddingTop:"12px", paddingLeft:"18px", paddingRight:"18px", paddingBottom:"calc(28px + var(--safe-b))", borderTop:`1px solid ${C.strokeSoft}`, background:C.surface, flexShrink:0 }}>
+        <div style={{ paddingTop:"12px", paddingLeft:"18px", paddingRight:"18px", paddingBottom:"calc(var(--nav-h) + var(--safe-b) + 12px)", borderTop:`1px solid ${C.strokeSoft}`, background:C.surface, flexShrink:0 }}>
           <button type="submit" form="progress-form" disabled={loading} style={{
             width:"100%", height:52, borderRadius:14, border:"none",
             background: loading ? C.ghost : accentColor, color:"#fff",
@@ -319,10 +319,10 @@ function EditSheet({ task, loading, error, onClose, onSave }: EditSheetProps) {
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
       <div className="sheet" style={{
-        position:"fixed", bottom:"var(--nav-h)", left:0, right:0, zIndex:400,
+        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
-        maxHeight:"calc(85vh - var(--nav-h))", display:"flex", flexDirection:"column", overflow:"hidden",
+        maxHeight:"85vh", display:"flex", flexDirection:"column", overflow:"hidden",
       }}>
         <div style={{ padding:"10px 18px 14px", borderBottom:`1px solid ${C.strokeSoft}`, flexShrink:0 }}>
           <div style={{ width:40, height:4, borderRadius:99, background:C.stroke, margin:"0 auto 14px" }}/>
@@ -360,7 +360,7 @@ function EditSheet({ task, loading, error, onClose, onSave }: EditSheetProps) {
             </div>
           </form>
         </div>
-        <div style={{ paddingTop:"12px", paddingLeft:"18px", paddingRight:"18px", paddingBottom:"calc(28px + var(--safe-b))", borderTop:`1px solid ${C.strokeSoft}`, background:C.surface, flexShrink:0 }}>
+        <div style={{ paddingTop:"12px", paddingLeft:"18px", paddingRight:"18px", paddingBottom:"calc(var(--nav-h) + var(--safe-b) + 12px)", borderTop:`1px solid ${C.strokeSoft}`, background:C.surface, flexShrink:0 }}>
           <button type="submit" form="edit-form" disabled={loading} style={{
             width:"100%", height:52, borderRadius:14, border:"none",
             background: loading ? C.ghost : C.warn, color:"#fff",
@@ -650,11 +650,11 @@ function TaskPageInner() {
       {canProgress && (
         <div style={{
           position:"fixed", bottom:"var(--nav-h)", left:0, right:0, zIndex:100,
-          padding:"12px 14px 16px",
           background:"rgba(255,255,255,0.97)",
           backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
           borderTop:`1px solid ${C.stroke}`,
         }}>
+          <div style={{ width:"100%", maxWidth:"47.9375rem", minWidth:"320px", margin:"0 auto", padding:"12px 14px 16px", boxSizing:"border-box" } as React.CSSProperties}>
           <button onClick={()=>setShowProgress(true)} style={{
             width:"100%", height:52, borderRadius:14, border:"none",
             background:C.brand, color:"#fff",
@@ -669,6 +669,7 @@ function TaskPageInner() {
             </svg>
             進捗を更新する
           </button>
+          </div>
         </div>
       )}
 
