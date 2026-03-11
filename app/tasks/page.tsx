@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { Guard } from "@/components/Guard"
@@ -117,14 +118,14 @@ export function ErrorBanner({ msg }: { msg: string }) {
 export function FieldInp({ value, onChange, placeholder, type = "text", focused, onFocus, onBlur, style }: {
   value: string; onChange: (v: string) => void; placeholder?: string
   type?: string; focused: boolean; onFocus: () => void; onBlur: () => void
-  style?: React.CSSProperties
+  style?: { [key: string]: string | number | undefined }
 }) {
   return (
     <input
       className="field-inp"
       type={type}
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
       onFocus={onFocus} onBlur={onBlur}
       placeholder={placeholder}
       style={{
@@ -156,7 +157,7 @@ export function shortDate(due: string | null) {
 /* ─────────────────────────────────────────────
    TaskRow  — リスト行デザイン
 ───────────────────────────────────────────── */
-function TaskRow({ task, index }: { task: T; index: number }) {
+function TaskRow({ task, index }: { task: T; index: number; key?: React.Key }) {
   const over = isOver(task.due_date)
   const due  = shortDate(task.due_date)
 
@@ -267,7 +268,7 @@ function BoardInner() {
     load()
     ;(async () => {
       const r = await listMainCategories()
-      if (r.ok) setMainCats(r.main_categories.filter(c => Number(c.is_active) === 1))
+      if (r.ok) setMainCats(r.main_categories.filter((c: MainCategory) => Number(c.is_active) === 1))
     })()
   }, [])
 
@@ -275,7 +276,7 @@ function BoardInner() {
     const src = tab === "todo" ? todo : doing
     const kw  = q.trim().toLowerCase()
     const ck  = creator.trim().toLowerCase()
-    return src.filter(t => {
+    return src.filter((t: T): boolean => {
       if (mainId && Number(t.main_category_id) !== mainId) return false
       if (onlyOver && !isOver(t.due_date)) return false
       if (ck && !t.created_by_name.toLowerCase().includes(ck)) return false
@@ -284,7 +285,7 @@ function BoardInner() {
     })
   }, [tab, todo, doing, q, mainId, creator, onlyOver])
 
-  const overCount = (tab === "todo" ? todo : doing).filter(t => isOver(t.due_date)).length
+  const overCount = (tab === "todo" ? todo : doing).filter((t: T) => isOver(t.due_date)).length
   const hasFilter = !!q || !!creator || !!mainId || onlyOver
 
   return (
@@ -414,7 +415,7 @@ function BoardInner() {
           </button>
 
           {/* フィルター */}
-          <button onClick={() => setFilterOpen(v => !v)} style={{
+          <button onClick={() => setFilterOpen((v: boolean) => !v)} style={{
             width: 36, height: 36, flexShrink: 0, borderRadius: 8, position: "relative",
             border: `1px solid ${filterOpen || hasFilter ? C.ink : C.rule}`,
             background: filterOpen || hasFilter ? C.inkWash : C.paper,
@@ -465,7 +466,7 @@ function BoardInner() {
               <div style={{ flex: 1.4, position: "relative" }}>
                 <select
                   className="field-inp"
-                  value={mainId} onChange={e => setMainId(Number(e.target.value))}
+                  value={mainId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMainId(Number(e.target.value))}
                   style={{
                     width: "100%", padding: "10px 30px 10px 13px",
                     borderRadius: 8, border: `1.5px solid ${C.rule}`,
@@ -474,7 +475,7 @@ function BoardInner() {
                   }}
                 >
                   <option value={0}>カテゴリ：全て</option>
-                  {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {mainCats.map((c: MainCategory) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
                   width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.4">
@@ -490,7 +491,7 @@ function BoardInner() {
               color: onlyOver ? C.rose : C.textMuted,
               fontWeight: onlyOver ? 500 : 400,
             }}>
-              <button type="button" onClick={() => setOnlyOver(v => !v)} style={{
+              <button type="button" onClick={() => setOnlyOver((v: boolean) => !v)} style={{
                 position: "relative", width: 38, height: 21, borderRadius: 99,
                 border: "none", padding: 0, cursor: "pointer", flexShrink: 0,
                 background: onlyOver ? "#fad0d0" : C.rule,
@@ -562,7 +563,7 @@ function BoardInner() {
               height: 2, background: C.ink,
               animation: "_linein 0.5s cubic-bezier(.22,1,.36,1) both",
             }}/>
-            {list.map((t, i) => <TaskRow key={t.id} task={t} index={i}/>)}
+            {list.map((t: T, i: number) => <TaskRow key={t.id} task={t} index={i}/>)}
           </div>
         )}
       </main>

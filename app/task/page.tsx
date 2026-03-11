@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -65,7 +66,7 @@ function TLEvent({ ev, isLast, nameMap }: { ev: TaskEvent; isLast: boolean; name
   const mapN = (ids?: number[]) => (ids ?? []).map(id => nameMap.get(Number(id)) ?? String(id)).join("、")
   const ch = ev.changed_subcats
 
-  const tags = [
+  const tags: { text: string; bg: string; border: string; color: string }[] = [
     ...(ch?.progress?.length ?? 0) > 0 ? [{ text: `進捗: ${mapN(ch?.progress)}`, bg: C.amberWash, border: C.amberRule, color: C.amber }] : [],
     ...(ch?.done?.length    ?? 0) > 0 ? [{ text: `完了: ${mapN(ch?.done)}`,     bg: C.emeraldWash, border: C.emeraldRule, color: C.emerald }] : [],
     ...(ch?.undone?.length  ?? 0) > 0 ? [{ text: `戻し: ${mapN(ch?.undone)}`,   bg: C.canvas,      border: C.rule,        color: C.textMuted }] : [],
@@ -91,7 +92,7 @@ function TLEvent({ ev, isLast, nameMap }: { ev: TaskEvent; isLast: boolean; name
           </p>
           {tags.length > 0 && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {tags.map((tg, i) => (
+              {tags.map((tg: { text: string; bg: string; border: string; color: string }, i: number) => (
                 <span key={i} style={{
                   padding: "1px 7px", borderRadius: 4,
                   border: `1px solid ${tg.border}`, background: tg.bg,
@@ -141,9 +142,9 @@ function TaskPageInner() {
 
   const isAdmin = meUser?.role === "admin"
 
-  const progMap  = useMemo(() => { const m = new Map<number,TaskSubProgress>(); prog.forEach(p => m.set(Number(p.sub_category_id), p)); return m }, [prog])
-  const nameMap  = useMemo(() => { const m = new Map<number,string>(); subs.forEach(s => m.set(s.id, s.name)); return m }, [subs])
-  const openSubs = useMemo(() => subs.filter(s => Number(progMap.get(s.id)?.is_done ?? 0) === 0), [subs, progMap])
+  const progMap  = useMemo(() => { const m = new Map<number,TaskSubProgress>(); prog.forEach((p: TaskSubProgress) => m.set(Number(p.sub_category_id), p)); return m }, [prog])
+  const nameMap  = useMemo(() => { const m = new Map<number,string>(); subs.forEach((s: TaskDetailSub) => m.set(s.id, s.name)); return m }, [subs])
+  const openSubs = useMemo(() => subs.filter((s: TaskDetailSub) => Number(progMap.get(s.id)?.is_done ?? 0) === 0), [subs, progMap])
   const doneCount = subs.length - openSubs.length
 
   async function load() {
@@ -338,7 +339,7 @@ function TaskPageInner() {
             <Section title="編集（管理者専用）" accent={C.amber}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editMode ? 16 : 0 }}>
                 <p style={{ margin: 0, fontSize: 12.5, color: C.textMuted }}>完了済みタスクの内容を修正できます</p>
-                <button onClick={() => setEditMode(v => !v)} style={{
+                <button onClick={() => setEditMode((v: boolean) => !v)} style={{
                   height: 30, padding: "0 12px", borderRadius: 7,
                   border: `1px solid ${editMode ? C.rule : C.ink}`,
                   background: editMode ? C.paperSub : C.inkWash,
@@ -351,9 +352,9 @@ function TaskPageInner() {
               </div>
               {editMode && (
                 <div style={{ display: "grid", gap: 12 }}>
-                  <div><label style={LBL}>タイトル *</label><input className="field-inp" value={editTitle} onChange={e => setEditTitle(e.target.value)} onFocus={() => setFocused("eT")} onBlur={() => setFocused(null)} style={inp("eT")}/></div>
-                  <div><label style={LBL}>詳細</label><textarea className="field-inp" value={editDetail} onChange={e => setEditDetail(e.target.value)} onFocus={() => setFocused("eD")} onBlur={() => setFocused(null)} rows={3} style={{ ...inp("eD"), lineHeight: 1.75 }}/></div>
-                  <div><label style={LBL}>期日</label><input className="field-inp" value={editDue} onChange={e => setEditDue(e.target.value)} onFocus={() => setFocused("eDu")} onBlur={() => setFocused(null)} style={{ ...inp("eDu"), maxWidth: 200 }}/></div>
+                  <div><label style={LBL}>タイトル *</label><input className="field-inp" value={editTitle} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)} onFocus={() => setFocused("eT")} onBlur={() => setFocused(null)} style={inp("eT")}/></div>
+                  <div><label style={LBL}>詳細</label><textarea className="field-inp" value={editDetail} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditDetail(e.target.value)} onFocus={() => setFocused("eD")} onBlur={() => setFocused(null)} rows={3} style={{ ...inp("eD"), lineHeight: 1.75 }}/></div>
+                  <div><label style={LBL}>期日</label><input className="field-inp" value={editDue} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditDue(e.target.value)} onFocus={() => setFocused("eDu")} onBlur={() => setFocused(null)} style={{ ...inp("eDu"), maxWidth: 200 }}/></div>
                   <button onClick={onSaveEdit} style={{
                     alignSelf: "flex-start", height: 36, padding: "0 18px", borderRadius: 8, border: "none",
                     background: C.ink, color: "#fff", fontSize: 13, fontWeight: 600,
@@ -389,7 +390,7 @@ function TaskPageInner() {
                 </div>
                 {/* チップ */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  {subs.map(s => {
+                  {subs.map((s: TaskDetailSub) => {
                     const done = Number(progMap.get(s.id)?.is_done ?? 0) === 1
                     return (
                       <span key={s.id} style={{
@@ -426,7 +427,7 @@ function TaskPageInner() {
                     <button key={a} type="button"
                       onClick={() => { setAction(a); setProgressSubIds([]); setDoneSubIds([]) }}
                       style={{
-                        padding: "8px 0", borderRadius: 7, border: "none",
+                        padding: "8px 0", borderRadius: 7,
                         background: action === a
                           ? (a === "complete" ? C.emeraldWash : C.inkWash)
                           : "transparent",
@@ -453,7 +454,7 @@ function TaskPageInner() {
                       {action === "update" ? "進捗を記録するカテゴリ" : "完了にするカテゴリ"}
                     </label>
                     {action === "complete" && (
-                      <button type="button" onClick={() => setDoneSubIds(openSubs.map(s => s.id))}
+                      <button type="button" onClick={() => setDoneSubIds(openSubs.map((s: TaskDetailSub) => s.id))}
                         style={{
                           marginBottom: 8, height: 28, padding: "0 10px", borderRadius: 6,
                           border: `1px solid ${C.emeraldRule}`, background: C.emeraldWash,
@@ -463,7 +464,7 @@ function TaskPageInner() {
                         }}>残り全て選択</button>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                      {openSubs.map(s => {
+                      {openSubs.map((s: TaskDetailSub) => {
                         const ids    = action === "update" ? progressSubIds : doneSubIds
                         const setter = action === "update" ? setProgressSubIds : setDoneSubIds
                         const on     = ids.includes(s.id)
@@ -499,7 +500,7 @@ function TaskPageInner() {
                   <label style={LBL}>詳細メモ ＊（履歴に残ります）</label>
                   <textarea
                     className="field-inp"
-                    value={note} onChange={e => setNote(e.target.value)}
+                    value={note} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)}
                     onFocus={() => setFocused("note")} onBlur={() => setFocused(null)}
                     placeholder="作業内容・変更点などを記録してください"
                     rows={3}
@@ -543,8 +544,8 @@ function TaskPageInner() {
               <p style={{ margin: 0, fontSize: 13, color: C.textMuted }}>履歴なし</p>
             ) : (
               <div>
-                {events.map((ev, idx) => (
-                  <TLEvent key={ev.id} ev={ev} isLast={idx === events.length - 1} nameMap={nameMap}/>
+                {events.map((ev: TaskEvent, idx: number) => (
+                  <TLEvent ev={ev} isLast={idx === events.length - 1} nameMap={nameMap}/>
                 ))}
               </div>
             )}

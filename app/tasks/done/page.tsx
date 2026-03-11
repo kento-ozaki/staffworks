@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { Guard } from "@/components/Guard"
@@ -37,7 +38,7 @@ function DoneInner() {
     ;(async () => {
       const r = await me(); if (r.ok) setMeUser(r.user)
       const c = await listMainCategories()
-      if (c.ok) setMainCats(c.main_categories.filter(x => Number(x.is_active) === 1))
+      if (c.ok) setMainCats(c.main_categories.filter((x: MainCategory) => Number(x.is_active) === 1))
     })()
     load()
   }, [])
@@ -52,7 +53,7 @@ function DoneInner() {
 
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase(); const ck = creator.trim().toLowerCase()
-    return tasks.filter(t => {
+    return tasks.filter((t: T) => {
       if (mainId && Number(t.main_category_id) !== mainId) return false
       if (ck && !t.created_by_name.toLowerCase().includes(ck)) return false
       if (kw && !`${t.title} ${t.main_category_name} ${t.created_by_name}`.toLowerCase().includes(kw)) return false
@@ -114,7 +115,7 @@ function DoneInner() {
                 <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
               </svg>
             </button>
-            <button onClick={() => setFilterOpen(v => !v)} style={{
+            <button onClick={() => setFilterOpen((v: boolean) => !v)} style={{
               width: 34, height: 34, borderRadius: 8, position: "relative",
               border: `1px solid ${filterOpen || hasFilter ? C.ink : C.rule}`,
               background: filterOpen || hasFilter ? C.inkWash : C.paper,
@@ -157,14 +158,14 @@ function DoneInner() {
                 style={{ flex: 1 }}
               />
               <div style={{ flex: 1.4, position: "relative" }}>
-                <select className="field-inp" value={mainId} onChange={e => setMainId(Number(e.target.value))} style={{
+                <select className="field-inp" value={mainId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMainId(Number(e.target.value))} style={{
                   width: "100%", padding: "10px 30px 10px 13px",
                   borderRadius: 8, border: `1.5px solid ${C.rule}`,
                   background: C.paperSub, color: mainId ? C.textPrimary : C.textGhost,
                   fontSize: 14, fontFamily: F_BODY, outline: "none", cursor: "pointer",
                 }}>
                   <option value={0}>カテゴリ：全て</option>
-                  {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {mainCats.map((c: MainCategory) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
                   width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.4">
@@ -225,7 +226,7 @@ function DoneInner() {
             {/* 上端ブランドライン */}
             <div style={{ height: 2, background: C.emerald, animation: "_linein 0.5s cubic-bezier(.22,1,.36,1) both" }}/>
             <div style={{ background: C.paper, borderBottom: `1px solid ${C.rule}` }}>
-              {filtered.map((t, i) => (
+              {filtered.map((t: T, i: number) => (
                 <div
                   key={t.id}
                   className="t-rise"

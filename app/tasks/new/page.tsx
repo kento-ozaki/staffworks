@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -26,7 +27,7 @@ function NewInner() {
   useEffect(() => {
     ;(async () => {
       const r = await listMainCategories()
-      if (r.ok) setMainCats(r.main_categories.filter(c => Number(c.is_active) === 1))
+      if (r.ok) setMainCats(r.main_categories.filter((c: MainCategory) => Number(c.is_active) === 1))
     })()
   }, [])
 
@@ -35,24 +36,24 @@ function NewInner() {
       if (!mainId) { setSubCats([]); setSelectedSubIds([]); return }
       const r = await listSubCategories(mainId)
       if (r.ok) {
-        const active = r.sub_categories.filter(c => Number(c.is_active) === 1)
+        const active = r.sub_categories.filter((c: SubCategory) => Number(c.is_active) === 1)
         setSubCats(active)
-        const nm = mainCats.find(m => m.id === mainId)?.name
-        if (nm === "その他") { const o = active.find(s => s.name === "その他"); setSelectedSubIds(o ? [o.id] : []) }
+        const nm = mainCats.find((m: MainCategory) => m.id === mainId)?.name
+        if (nm === "その他") { const o = active.find((s: SubCategory) => s.name === "その他"); setSelectedSubIds(o ? [o.id] : []) }
         else setSelectedSubIds([])
       }
     })()
   }, [mainId])
 
-  const mainName    = useMemo(() => mainCats.find(m => m.id === mainId)?.name ?? "", [mainCats, mainId])
+  const mainName    = useMemo(() => mainCats.find((m: MainCategory) => m.id === mainId)?.name ?? "", [mainCats, mainId])
   const subDisabled = mainName === "その他"
 
   function toggleSub(id: number) {
     if (subDisabled) return
-    setSelectedSubIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
+    setSelectedSubIds((p: number[]) => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError(null)
     if (!title.trim()) return setError("タイトルを入力してください")
     if (!mainId)       return setError("メインカテゴリを選択してください")
@@ -176,7 +177,7 @@ function NewInner() {
               <label style={LBL}>タイトル <span style={{ color: C.rose }}>*</span></label>
               <input
                 className="field-inp"
-                value={title} onChange={e => setTitle(e.target.value)}
+                value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
                 onFocus={() => setFocused("t")} onBlur={() => setFocused(null)}
                 placeholder="タスクのタイトルを入力"
                 style={inp("t")}
@@ -189,12 +190,12 @@ function NewInner() {
               <div style={{ position: "relative" }}>
                 <select
                   className="field-inp"
-                  value={mainId} onChange={e => setMainId(Number(e.target.value))}
+                  value={mainId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMainId(Number(e.target.value))}
                   onFocus={() => setFocused("m")} onBlur={() => setFocused(null)}
                   style={{ ...inp("m"), cursor: "pointer", color: mainId ? C.textPrimary : C.textGhost, paddingRight: 34 }}
                 >
                   <option value={0}>カテゴリを選択</option>
-                  {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {mainCats.map((c: MainCategory) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <svg style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
                   width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.4">
@@ -214,7 +215,7 @@ function NewInner() {
                   ? <p style={{ margin: 0, fontSize: 13, color: C.textMuted }}>サブカテゴリがありません</p>
                   : (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                      {subCats.map(s => {
+                      {subCats.map((s: SubCategory) => {
                         const on = selectedSubIds.includes(s.id)
                         return (
                           <button key={s.id} type="button" onClick={() => toggleSub(s.id)} disabled={subDisabled}
@@ -250,7 +251,7 @@ function NewInner() {
               <label style={LBL}>詳細メモ（任意）</label>
               <textarea
                 className="field-inp"
-                value={detail} onChange={e => setDetail(e.target.value)}
+                value={detail} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDetail(e.target.value)}
                 onFocus={() => setFocused("d")} onBlur={() => setFocused(null)}
                 placeholder="タスクの背景・詳細を記入（任意）"
                 rows={4}
@@ -263,7 +264,7 @@ function NewInner() {
               <label style={LBL}>期日（任意）</label>
               <input
                 type="date" className="field-inp"
-                value={due} onChange={e => setDue(e.target.value)}
+                value={due} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDue(e.target.value)}
                 onFocus={() => setFocused("du")} onBlur={() => setFocused(null)}
                 style={{ ...inp("du"), maxWidth: 200 }}
               />
