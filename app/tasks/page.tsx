@@ -303,66 +303,8 @@ function BoardInner() {
         borderBottom: `1px solid ${C.rule}`,
       }}>
 
-        {/* ── タブ行 ── */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${C.ruleSoft}` }}>
-          {(["todo", "doing"] as const).map(key => {
-            const on  = tab === key
-            const cnt = key === "todo" ? todo.length : doing.length
-            const oc  = key === tab ? overCount : 0
-            const lbl = key === "todo" ? "未着手" : "進行中"
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                style={{
-                  flex: 1, background: "none", border: "none", cursor: "pointer",
-                  padding: "14px 8px 12px",
-                  position: "relative",
-                  WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                {/* アクティブバー */}
-                <div style={{
-                  position: "absolute", bottom: -1, left: "15%", right: "15%",
-                  height: 2, background: C.ink, borderRadius: 1,
-                  transform: on ? "scaleX(1)" : "scaleX(0)",
-                  transformOrigin: "left",
-                  transition: "transform 0.3s cubic-bezier(.34,1.56,.64,1)",
-                }}/>
-
-                {/* 件数  — Fraunces でディスプレイ表示 */}
-                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 6, marginBottom: 3 }}>
-                  <span style={{
-                    fontFamily: F_DISPLAY,
-                    fontWeight: 600, fontSize: 32, lineHeight: 1,
-                    letterSpacing: "-0.04em",
-                    color: on ? C.ink : C.textGhost,
-                    transition: "color 0.2s",
-                  }}>{cnt}</span>
-                  {oc > 0 && (
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, fontFamily: F_BODY,
-                      background: C.rose, color: "#fff",
-                      padding: "1px 5px 2px", borderRadius: 4,
-                      letterSpacing: "0.04em",
-                      marginBottom: 5,
-                    }}>!{oc}</span>
-                  )}
-                </div>
-
-                <div style={{
-                  fontSize: 10.5, fontWeight: 500, letterSpacing: "0.10em",
-                  textTransform: "uppercase", fontFamily: F_BODY,
-                  color: on ? C.textSecond : C.textGhost,
-                  transition: "color 0.2s",
-                }}>{lbl}</div>
-              </button>
-            )
-          })}
-        </div>
-
         {/* ── アクション行 ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 12px 9px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 12px 9px", borderBottom: `1px solid ${C.ruleSoft}` }}>
 
           {/* 完了一覧 */}
           <Link href="/tasks/done/" style={{
@@ -509,6 +451,65 @@ function BoardInner() {
             </label>
           </div>
         )}
+
+        {/* ── タブ行 ── */}
+        <div style={{ display: "flex" }}>
+          {(["todo", "doing"] as const).map(key => {
+            const on  = tab === key
+            const cnt = key === "todo" ? todo.length : doing.length
+            const oc  = key === tab ? overCount : 0
+            const lbl = key === "todo" ? "未着手" : "進行中"
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                style={{
+                  flex: 1, background: "none", border: "none", cursor: "pointer",
+                  padding: "12px 8px 13px",
+                  position: "relative",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                {/* アクティブバー（下端） */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: "15%", right: "15%",
+                  height: 2, background: C.ink, borderRadius: "2px 2px 0 0",
+                  transform: on ? "scaleX(1)" : "scaleX(0)",
+                  transformOrigin: "left",
+                  transition: "transform 0.3s cubic-bezier(.34,1.56,.64,1)",
+                }}/>
+
+                {/* 件数 — Fraunces */}
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 6, marginBottom: 3 }}>
+                  <span style={{
+                    fontFamily: F_DISPLAY,
+                    fontWeight: 600, fontSize: 32, lineHeight: 1,
+                    letterSpacing: "-0.04em",
+                    color: on ? C.ink : C.textGhost,
+                    transition: "color 0.2s",
+                  }}>{cnt}</span>
+                  {oc > 0 && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, fontFamily: F_BODY,
+                      background: C.rose, color: "#fff",
+                      padding: "1px 5px 2px", borderRadius: 4,
+                      letterSpacing: "0.04em",
+                      marginBottom: 5,
+                    }}>!{oc}</span>
+                  )}
+                </div>
+
+                <div style={{
+                  fontSize: 10.5, fontWeight: 500, letterSpacing: "0.10em",
+                  textTransform: "uppercase", fontFamily: F_BODY,
+                  color: on ? C.textSecond : C.textGhost,
+                  transition: "color 0.2s",
+                }}>{lbl}</div>
+              </button>
+            )
+          })}
+        </div>
+
       </header>
 
       {/* ══════════════════════════════════════════
