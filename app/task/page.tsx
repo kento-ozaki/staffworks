@@ -473,7 +473,7 @@ function TaskPageInner() {
 
       {/* ── ヘッダー ── */}
       <header style={{
-        position:"sticky", top:0, zIndex:100,
+        position:"sticky", top:0, zIndex:30,
         background:"rgba(255,255,255,0.97)",
         backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
         borderBottom:`1px solid ${C.stroke}`,
@@ -657,7 +657,7 @@ function TaskPageInner() {
       {/* ── 固定フッターCTA ── */}
       {canProgress && (
         <div style={{
-          position:"fixed", bottom:"var(--nav-h)", left:0, right:0, zIndex:100,
+          position:"fixed", bottom:"var(--nav-h)", left:0, right:0, zIndex:30,
           background:"rgba(255,255,255,0.97)",
           backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
           borderTop:`1px solid ${C.stroke}`,

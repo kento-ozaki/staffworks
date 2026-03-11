@@ -303,7 +303,7 @@ function BoardInner() {
 
       {/* ══ STICKY HEADER ══ */}
       <header style={{
-        position:"sticky", top:0, zIndex:200,
+        position:"sticky", top:0, zIndex:30,
         background:"rgba(255,255,255,0.97)",
         backdropFilter:"blur(20px) saturate(160%)",
         WebkitBackdropFilter:"blur(20px) saturate(160%)",

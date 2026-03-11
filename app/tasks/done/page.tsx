@@ -67,7 +67,7 @@ function DoneInner() {
 
       {/* ── ヘッダー ── */}
       <header style={{
-        position:"sticky", top:0, zIndex:200,
+        position:"sticky", top:0, zIndex:30,
         background:"rgba(255,255,255,0.97)",
         backdropFilter:"blur(20px)",
         WebkitBackdropFilter:"blur(20px)",
