@@ -74,7 +74,7 @@ function TimelineEvent({ ev, isLast, subNameMap }: {
 
   const badges = [
     ...(ch?.progress?.length ?? 0) > 0
-      ? [{ label:`進捗: ${mapN(ch?.progress)}`, bg:C.progPale??C.brandPale, border:"#e0c84a", color:"#7a5f00" }] : [],
+      ? [{ label:`進捗: ${mapN(ch?.progress)}`, bg:progPale, border:"#e0c84a", color:"#7a5f00" }] : [],
     ...(ch?.done?.length ?? 0) > 0
       ? [{ label:`完了: ${mapN(ch?.done)}`,     bg:C.donePale,  border:C.doneLine,  color:C.done     }] : [],
     ...(ch?.undone?.length ?? 0) > 0
