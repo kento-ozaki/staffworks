@@ -142,7 +142,8 @@ function ProgressSheet({ openSubs, loading, error, onClose, onSubmit }: SheetPro
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
       <div className="sheet" style={{
-        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
+        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", zIndex:400,
+        width:"100%", maxWidth:"47.9375rem", minWidth:"320px",
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
         maxHeight:"88vh", display:"flex", flexDirection:"column", overflow:"hidden",
@@ -319,7 +320,8 @@ function EditSheet({ task, loading, error, onClose, onSave }: EditSheetProps) {
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
       <div className="sheet" style={{
-        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
+        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", zIndex:400,
+        width:"100%", maxWidth:"47.9375rem", minWidth:"320px",
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
         maxHeight:"85vh", display:"flex", flexDirection:"column", overflow:"hidden",
