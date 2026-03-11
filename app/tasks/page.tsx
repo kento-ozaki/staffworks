@@ -7,30 +7,183 @@ import type { ApiNg } from "@/lib/api"
 import { toUserMessage } from "@/lib/errors"
 import { board, listMainCategories, type MainCategory, type TaskCard as T } from "@/lib/tasks"
 
-const C = {
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   共通デザイントークン（全ページ共通）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+export const C = {
   bg:          "#f0f5f7",
   surface:     "#ffffff",
-  surfaceDeep: "#f7fafb",
+  surfaceSub:  "#f7fafb",
+  /* ヘッダー */
+  header:      "#0a1f2e",
+  headerMid:   "#0d2840",
+  headerSub:   "#1a3a50",
+  /* ブランド */
   brand:       "#006284",
+  brandLight:  "#0082ad",
   brandMid:    "#004d66",
   brandDeep:   "#003a4d",
   brandPale:   "#e0f0f5",
   brandPaler:  "#f0f8fb",
+  /* テキスト */
   text:        "#0d1f26",
   sub:         "#4a7a8a",
   muted:       "#8aacb5",
+  /* 罫線 */
   line:        "#daeaf0",
   lineSoft:    "#edf5f8",
-  danger:      "#c0392b",
-  dangerBg:    "#fdf2f2",
-  dangerLine:  "#e8b4b4",
-  dangerPale:  "#fff5f5",
+  /* 白系 */
+  white:       "#ffffff",
+  whiteA80:    "rgba(255,255,255,0.80)",
+  whiteA50:    "rgba(255,255,255,0.50)",
+  whiteA30:    "rgba(255,255,255,0.30)",
+  whiteA15:    "rgba(255,255,255,0.15)",
+  whiteA08:    "rgba(255,255,255,0.08)",
+  /* 完了 */
+  done:        "#1a6640",
+  donePale:    "#e6f5ed",
+  doneLine:    "#a8d8be",
+  /* 危険 */
+  danger:      "#e05252",
+  dangerDeep:  "#c0392b",
+  dangerBg:    "#fff5f5",
+  dangerLine:  "#fcc",
+  dangerPale:  "rgba(224,82,82,0.08)",
 } as const
 
-const FH = `'DM Sans', 'Noto Sans JP', sans-serif`
-const FB = `'Noto Sans JP', 'DM Sans', sans-serif`
-const FM = `'DM Mono', 'Noto Sans JP', monospace`
+export const FD = `'Syne', 'Noto Sans JP', sans-serif`
+export const FB = `'Noto Sans JP', 'Syne', sans-serif`
+export const FM = `'JetBrains Mono', monospace`
 
+/* 全ページ共通のグローバルCSS */
+export const GLOBAL_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  -webkit-font-smoothing: antialiased;
+  ::placeholder { color: ${C.muted}; font-family: ${FB}; font-size: 13px; }
+  select { appearance: none; -webkit-appearance: none; }
+  select option { background: #fff; color: ${C.text}; }
+  textarea { resize: vertical; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.55; }
+  }
+  .card-in  { animation: cardIn  0.32s cubic-bezier(.22,1,.36,1) both; }
+  .row-in   { animation: rowIn   0.28s cubic-bezier(.22,1,.36,1) both; }
+  .fi:focus { outline: none; border-color: ${C.whiteA80} !important; box-shadow: 0 0 0 3px ${C.whiteA15} !important; }
+  .fi-light:focus { outline: none; border-color: ${C.brand} !important; box-shadow: 0 0 0 3px rgba(0,98,132,0.12) !important; }
+`
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   共通UIパーツ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/** ダークヘッダーバー（戻るボタン付き） */
+export function PageHeader({
+  backHref, backLabel = "タスク一覧",
+  children,
+}: {
+  backHref: string
+  backLabel?: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div style={{
+      background: C.header,
+      backgroundImage: `
+        radial-gradient(ellipse at 0% 0%, rgba(0,130,173,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 100% 100%, rgba(0,98,132,0.12) 0%, transparent 50%)
+      `,
+      padding: "14px 16px 16px",
+      display: "flex", alignItems: "center", gap: 12,
+    }}>
+      <Link href={backHref} style={{
+        width: 36, height: 36, borderRadius: 12, flexShrink: 0,
+        border: `1px solid ${C.whiteA30}`,
+        background: C.whiteA08,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: C.whiteA80, textDecoration: "none",
+        backdropFilter: "blur(6px)",
+        WebkitTapHighlightColor: "transparent",
+        transition: "background 0.15s",
+      }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </Link>
+      <div style={{ flex: 1 }}>{children}</div>
+    </div>
+  )
+}
+
+/** エラーバー */
+export function ErrorBar({ msg }: { msg: string }) {
+  return (
+    <div style={{
+      background: C.dangerBg, border: `1px solid ${C.dangerLine}`,
+      borderRadius: 12, padding: "12px 14px", marginBottom: 14,
+      color: C.dangerDeep, fontSize: 13, fontFamily: FB,
+      display: "flex", alignItems: "center", gap: 8,
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.dangerDeep} strokeWidth="2.2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {msg}
+    </div>
+  )
+}
+
+/** フォームカードセクション */
+export function FormSection({ label, children, last = false }: {
+  label?: string; children: React.ReactNode; last?: boolean
+}) {
+  return (
+    <div style={{
+      padding: "20px 18px",
+      borderBottom: last ? "none" : `1px solid ${C.line}`,
+    }}>
+      {label && (
+        <p style={{
+          margin: "0 0 10px", fontSize: 10.5, fontWeight: 700,
+          color: C.sub, letterSpacing: "0.10em",
+          textTransform: "uppercase", fontFamily: FD,
+        }}>{label}</p>
+      )}
+      {children}
+    </div>
+  )
+}
+
+/** 共通インプットスタイル（light版） */
+export const inputStyle = (focused: boolean): React.CSSProperties => ({
+  width: "100%", padding: "11px 14px",
+  borderRadius: 11,
+  border: `1.5px solid ${focused ? C.brand : C.line}`,
+  boxShadow: focused ? `0 0 0 3px rgba(0,98,132,0.10)` : "none",
+  background: C.surfaceSub,
+  color: C.text, fontSize: 14, fontFamily: FB,
+  outline: "none", transition: "border-color 0.15s, box-shadow 0.15s",
+})
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ユーティリティ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function today() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
@@ -42,6 +195,9 @@ function fmtDue(due: string | null) {
   return `${d.getMonth()+1}/${d.getDate()}`
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TaskCard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function TaskCard({ task, index }: { task: T; index: number }) {
   const [pressed, setPressed] = useState(false)
   const overdue = isOverdue(task.due_date)
@@ -58,53 +214,103 @@ function TaskCard({ task, index }: { task: T; index: number }) {
       onTouchEnd={() => setPressed(false)}
     >
       <article
-        className="task-card"
-        data-overdue={overdue}
+        className="card-in"
         style={{
-          animationDelay: `${Math.min(index * 40, 300)}ms`,
-          transform: pressed ? "scale(0.985)" : "scale(1)",
-          transition: "transform 0.12s cubic-bezier(.22,1,.36,1), box-shadow 0.18s ease",
+          animationDelay: `${Math.min(index * 40, 320)}ms`,
+          background: overdue
+            ? `linear-gradient(135deg, #fff8f8 0%, ${C.white} 60%)`
+            : C.white,
+          borderRadius: 18,
+          border: `1px solid ${overdue ? C.dangerLine : C.line}`,
+          padding: "16px 18px",
+          cursor: "pointer",
+          transform: pressed ? "scale(0.975)" : "scale(1)",
+          boxShadow: pressed
+            ? `0 1px 4px rgba(0,98,132,0.06)`
+            : overdue
+              ? `0 2px 16px rgba(224,82,82,0.09), 0 1px 3px rgba(224,82,82,0.05)`
+              : `0 2px 16px rgba(0,98,132,0.07), 0 1px 3px rgba(0,98,132,0.04)`,
+          transition: "transform 0.13s cubic-bezier(.22,1,.36,1), box-shadow 0.18s",
+          WebkitTapHighlightColor: "transparent",
+          position: "relative", overflow: "hidden",
         }}
       >
-        {/* 上部：カテゴリ ＋ 期日 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
-          <span className="category-pill">
-            {task.main_category_name}
-          </span>
+        {/* 左端アクセントライン */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+          background: overdue
+            ? `linear-gradient(to bottom, ${C.danger}, #e74c3c)`
+            : `linear-gradient(to bottom, ${C.brandLight}, ${C.brandMid})`,
+          borderRadius: "18px 0 0 18px",
+          opacity: overdue ? 1 : 0.5,
+          transition: "opacity 0.15s",
+        }}/>
+
+        {/* カテゴリ + 期日 */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: 10 }}>
+          <div style={{ display:"flex", alignItems:"center", gap: 6 }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+              background: overdue ? C.danger : C.brandLight,
+              boxShadow: overdue
+                ? `0 0 0 3px ${C.dangerPale}`
+                : `0 0 0 3px ${C.brandPale}`,
+            }}/>
+            <span style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: "0.10em",
+              textTransform: "uppercase", fontFamily: FD,
+              color: overdue ? C.danger : C.brand,
+            }}>
+              {task.main_category_name}
+            </span>
+          </div>
+
           {due && (
-            <span className={overdue ? "due-badge due-overdue" : "due-badge"}>
+            <div style={{
+              display:"flex", alignItems:"center", gap: 4,
+              background: overdue ? C.dangerBg : C.brandPaler,
+              border: `1px solid ${overdue ? C.dangerLine : C.line}`,
+              borderRadius: 8, padding: "3px 9px",
+            }}>
               {overdue && (
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill={C.danger}>
+                  <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
                 </svg>
               )}
-              {due}
-            </span>
+              <span style={{
+                fontSize: 11.5, fontWeight: 600, fontFamily: FM,
+                color: overdue ? C.dangerDeep : C.sub, letterSpacing: "0.04em",
+              }}>{due}</span>
+            </div>
           )}
         </div>
 
         {/* タイトル */}
         <p style={{
-          margin: "0 0 12px", fontSize: 14.5, fontWeight: 600,
-          color: C.text, lineHeight: 1.6, fontFamily: FB,
-          letterSpacing: "-0.01em",
+          margin: "0 0 13px", fontSize: 14.5, fontWeight: 600,
+          color: C.text, lineHeight: 1.55, fontFamily: FB,
+          letterSpacing: "-0.015em",
         }}>
           {task.title}
         </p>
 
-        {/* 下部：登録者 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div className="avatar">
-            {(task.created_by_name ?? "?")[0].toUpperCase()}
+        {/* フッター */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap: 7 }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%",
+              background: `linear-gradient(135deg, ${C.brand}, ${C.brandDeep})`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize: 9.5, fontWeight: 800, color: C.white, fontFamily: FD,
+              flexShrink: 0,
+            }}>
+              {(task.created_by_name ?? "?")[0].toUpperCase()}
+            </div>
+            <span style={{ fontSize: 11.5, color: C.muted, fontFamily: FB }}>
+              {task.created_by_name}
+            </span>
           </div>
-          <span style={{ fontSize: 12, color: C.muted, fontFamily: FB, letterSpacing: "0.01em" }}>
-            {task.created_by_name}
-          </span>
-        </div>
-
-        {/* 右矢印 */}
-        <div className="card-arrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.line} strokeWidth="2">
             <path d="M9 18l6-6-6-6"/>
           </svg>
         </div>
@@ -113,13 +319,16 @@ function TaskCard({ task, index }: { task: T; index: number }) {
   )
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BoardInner
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function BoardInner() {
-  const [tab, setTab] = useState<"todo" | "doing">("todo")
+  const [tab, setTab]   = useState<"todo"|"doing">("todo")
   const [todo, setTodo] = useState<T[]>([])
   const [doing, setDoing] = useState<T[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [q, setQ] = useState("")
+  const [error, setError] = useState<string|null>(null)
+  const [q, setQ]       = useState("")
   const [mainCats, setMainCats] = useState<MainCategory[]>([])
   const [mainId, setMainId] = useState<number>(0)
   const [creator, setCreator] = useState("")
@@ -149,7 +358,7 @@ function BoardInner() {
       if (mainId && Number(t.main_category_id) !== mainId) return false
       if (onlyOverdue && !isOverdue(t.due_date)) return false
       if (ck && !t.created_by_name.toLowerCase().includes(ck)) return false
-      if (kw) { if (!`${t.title} ${t.main_category_name} ${t.created_by_name}`.toLowerCase().includes(kw)) return false }
+      if (kw && !`${t.title} ${t.main_category_name} ${t.created_by_name}`.toLowerCase().includes(kw)) return false
       return true
     })
   }, [tab, todo, doing, q, mainId, creator, onlyOverdue])
@@ -157,332 +366,104 @@ function BoardInner() {
   const overdueCount = (tab === "todo" ? todo : doing).filter(t => isOverdue(t.due_date)).length
   const hasFilter = !!q || !!creator || !!mainId || onlyOverdue
 
+  const todoOD  = todo.filter(t => isOverdue(t.due_date)).length
+  const doingOD = doing.filter(t => isOverdue(t.due_date)).length
+
   return (
-    <div className="root">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+    <div style={{ minHeight:"100vh", background: C.bg, fontFamily: FB, WebkitFontSmoothing: "antialiased" }}>
+      <style>{GLOBAL_CSS}</style>
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      {/* ━━ ヘッダー ━━ */}
+      <div style={{
+        position:"sticky", top:0, zIndex:100,
+        background: C.header,
+        backgroundImage: `
+          radial-gradient(ellipse at 0% 0%, rgba(0,130,173,0.18) 0%, transparent 55%),
+          radial-gradient(ellipse at 100% 100%, rgba(0,98,132,0.12) 0%, transparent 50%)
+        `,
+      }}>
 
-        .root {
-          min-height: 100vh;
-          background: ${C.bg};
-          /* 微細なグリッドテクスチャで奥行きを演出 */
-          background-image:
-            radial-gradient(circle at 20% 0%, rgba(0,98,132,0.04) 0%, transparent 50%),
-            radial-gradient(circle at 80% 100%, rgba(0,98,132,0.03) 0%, transparent 50%);
-          font-family: ${FB};
-          -webkit-font-smoothing: antialiased;
-        }
-
-        /* ─── トップバー ─── */
-        .topbar {
-          position: sticky; top: 0; z-index: 100;
-          background: rgba(255,255,255,0.92);
-          backdrop-filter: blur(16px) saturate(180%);
-          -webkit-backdrop-filter: blur(16px) saturate(180%);
-          border-bottom: 1px solid ${C.line};
-        }
-
-        /* ─── タブ行 ─── */
-        .tab-row {
-          display: flex;
-          align-items: stretch;
-          padding: 0 4px;
-          border-bottom: 1px solid ${C.lineSoft};
-        }
-
-        .tab-btn {
-          flex: 1; border: none; background: transparent;
-          padding: 15px 8px 13px;
-          display: flex; align-items: center; justify-content: center; gap: 7px;
-          font-size: 13px; font-family: ${FB}; font-weight: 500;
-          color: ${C.muted}; cursor: pointer; position: relative;
-          -webkit-tap-highlight-color: transparent;
-          transition: color 0.2s;
-        }
-        .tab-btn::after {
-          content: ''; position: absolute; bottom: -1px; left: 16px; right: 16px;
-          height: 2px; border-radius: 2px 2px 0 0;
-          background: ${C.brand};
-          transform: scaleX(0); transform-origin: center;
-          transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
-        }
-        .tab-btn.active { color: ${C.brand}; font-weight: 700; }
-        .tab-btn.active::after { transform: scaleX(1); }
-
-        .tab-count {
-          font-size: 11px; font-weight: 700; font-family: ${FH};
-          padding: 2px 7px; border-radius: 99px;
-          background: ${C.bg}; color: ${C.muted};
-          transition: background 0.2s, color 0.2s;
-        }
-        .tab-btn.active .tab-count {
-          background: ${C.brandPale}; color: ${C.brand};
-        }
-
-        .overdue-badge {
-          font-size: 10px; font-weight: 700; font-family: ${FH};
-          padding: 1px 6px; border-radius: 99px;
-          background: ${C.dangerBg}; color: ${C.danger};
-          border: 1px solid ${C.dangerLine};
-          animation: pulse 2s ease infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-
-        /* ─── アクション行 ─── */
-        .action-row {
-          display: flex; align-items: center;
-          padding: 9px 12px; gap: 8px;
-        }
-
-        .btn-done {
-          height: 38px; flex-shrink: 0;
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 0 13px; border-radius: 12px;
-          border: 1.5px solid ${C.line};
-          background: ${C.surfaceDeep}; color: ${C.sub};
-          font-size: 12.5px; font-weight: 600; font-family: ${FB};
-          text-decoration: none; white-space: nowrap;
-          -webkit-tap-highlight-color: transparent;
-          transition: background 0.15s, border-color 0.15s;
-        }
-        .btn-done:active { background: ${C.brandPaler}; border-color: ${C.brand}; }
-
-        .btn-new {
-          flex: 1; height: 38px;
-          display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-          border-radius: 12px; border: none;
-          background: linear-gradient(135deg, ${C.brand} 0%, ${C.brandDeep} 100%);
-          color: #fff; font-size: 13.5px; font-weight: 700; font-family: ${FH};
-          text-decoration: none; letter-spacing: 0.01em;
-          box-shadow: 0 2px 0 ${C.brandDeep}, 0 4px 16px rgba(0,98,132,0.28);
-          -webkit-tap-highlight-color: transparent;
-          transition: transform 0.1s, box-shadow 0.1s;
-        }
-        .btn-new:active {
-          transform: translateY(1px);
-          box-shadow: 0 1px 0 ${C.brandDeep}, 0 2px 8px rgba(0,98,132,0.2);
-        }
-
-        .icon-btn {
-          width: 38px; height: 38px; flex-shrink: 0;
-          border-radius: 12px; border: 1.5px solid ${C.line};
-          background: ${C.surfaceDeep};
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; position: relative;
-          -webkit-tap-highlight-color: transparent;
-          transition: background 0.15s, border-color 0.15s;
-        }
-        .icon-btn:active { background: ${C.brandPaler}; border-color: ${C.brand}; }
-        .icon-btn.active-filter {
-          background: ${C.brandPale}; border-color: ${C.brand};
-        }
-        .filter-dot {
-          position: absolute; top: 6px; right: 6px;
-          width: 6px; height: 6px; border-radius: 50%;
-          background: ${C.brand}; border: 1.5px solid white;
-        }
-
-        /* ─── フィルターパネル ─── */
-        .filter-panel {
-          padding: 6px 12px 14px;
-          border-top: 1px solid ${C.lineSoft};
-          display: flex; flex-direction: column; gap: 9px;
-          animation: slideDown 0.2s cubic-bezier(.22,1,.36,1) both;
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: none; }
-        }
-
-        .filter-input {
-          height: 42px; width: 100%; padding: 0 14px;
-          background: ${C.bg};
-          border: 1.5px solid ${C.line};
-          border-radius: 11px;
-          color: ${C.text}; font-size: 14px; font-family: ${FB};
-          outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .filter-input:focus {
-          border-color: ${C.brand};
-          box-shadow: 0 0 0 3px rgba(0,98,132,0.10);
-        }
-        ::placeholder { color: ${C.muted}; }
-
-        .filter-row { display: flex; gap: 8px; }
-        .filter-row .filter-input { flex: 1; }
-
-        /* ─── カード ─── */
-        .task-card {
-          position: relative;
-          background: ${C.surface};
-          border-radius: 18px;
-          border: 1px solid ${C.line};
-          padding: 16px 44px 16px 20px;
-          cursor: pointer;
-          box-shadow: 0 1px 2px rgba(0,98,132,0.04), 0 4px 12px rgba(0,98,132,0.04);
-          animation: cardUp 0.3s cubic-bezier(.22,1,.36,1) both;
-          overflow: hidden;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .task-card::before {
-          content: '';
-          position: absolute; left: 0; top: 0; bottom: 0;
-          width: 3px; border-radius: 18px 0 0 18px;
-          background: ${C.line};
-          transition: background 0.2s;
-        }
-        .task-card:active::before,
-        .task-card:hover::before {
-          background: linear-gradient(to bottom, ${C.brand}, ${C.brandMid});
-        }
-        .task-card[data-overdue="true"]::before {
-          background: linear-gradient(to bottom, ${C.danger}, #e74c3c);
-        }
-        .task-card[data-overdue="true"] {
-          background: ${C.dangerPale};
-          border-color: ${C.dangerLine};
-        }
-
-        @keyframes cardUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: none; }
-        }
-
-        .category-pill {
-          font-size: 10px; font-weight: 700;
-          font-family: ${FH};
-          color: ${C.brand};
-          background: ${C.brandPale};
-          padding: 3px 9px; border-radius: 99px;
-          letter-spacing: 0.06em; text-transform: uppercase;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-          max-width: 60%;
-        }
-
-        .due-badge {
-          display: inline-flex; align-items: center; gap: 3px;
-          font-size: 11.5px; font-weight: 700; font-family: ${FM};
-          color: ${C.sub};
-          background: ${C.brandPaler};
-          border: 1px solid ${C.line};
-          padding: 3px 9px; border-radius: 99px;
-          flex-shrink: 0;
-        }
-        .due-overdue {
-          color: ${C.danger};
-          background: ${C.dangerBg};
-          border-color: ${C.dangerLine};
-        }
-
-        .avatar {
-          width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-          background: linear-gradient(135deg, ${C.brand}, ${C.brandDeep});
-          display: flex; align-items: center; justify-content: center;
-          font-size: 9.5px; font-weight: 700; color: #fff; font-family: ${FH};
-          box-shadow: 0 1px 4px rgba(0,98,132,0.3);
-        }
-
-        .card-arrow {
-          position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-          color: ${C.line};
-          display: flex; align-items: center;
-          transition: color 0.15s, transform 0.15s;
-        }
-        .task-card:hover .card-arrow,
-        .task-card:active .card-arrow {
-          color: ${C.brand};
-          transform: translateY(-50%) translateX(2px);
-        }
-
-        /* ─── スピナー ─── */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner {
-          width: 36px; height: 36px; border-radius: 50%;
-          border: 3px solid ${C.brandPale};
-          border-top-color: ${C.brand};
-          animation: spin 0.7s linear infinite;
-          margin: 0 auto 16px;
-        }
-
-        /* ─── 空状態 ─── */
-        .empty-icon {
-          width: 60px; height: 60px; border-radius: 20px;
-          background: linear-gradient(135deg, ${C.brandPale}, ${C.brandPaler});
-          display: flex; align-items: center; justify-content: center;
-          margin: 0 auto 18px;
-          box-shadow: 0 4px 20px rgba(0,98,132,0.08);
-        }
-
-        /* ─── トグル ─── */
-        .toggle-track {
-          position: relative; width: 42px; height: 24px; border-radius: 99px;
-          border: none; padding: 0; cursor: pointer; flex-shrink: 0;
-          transition: background 0.22s;
-        }
-        .toggle-thumb {
-          position: absolute; top: 3px;
-          width: 18px; height: 18px; border-radius: 50%;
-          background: #fff;
-          box-shadow: 0 1px 5px rgba(0,0,0,0.18);
-          transition: left 0.22s cubic-bezier(.34,1.56,.64,1);
-          display: block;
-        }
-
-        /* ─── エラー ─── */
-        .error-bar {
-          background: ${C.dangerBg}; border: 1px solid ${C.dangerLine};
-          border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
-          color: ${C.danger}; font-size: 13px; font-family: ${FB};
-          display: flex; align-items: center; gap: 8px;
-        }
-
-        select { appearance: none; -webkit-appearance: none; }
-        select option { background: #fff; color: ${C.text}; }
-      `}</style>
-
-      {/* ══════════════════════════════════════
-          トップバー（sticky）
-      ══════════════════════════════════════ */}
-      <div className="topbar">
-
-        {/* 行①：タブ */}
-        <div className="tab-row">
-          {([["todo","未着手"] as const, ["doing","進行中"] as const]).map(([key, label]) => {
-            const cnt = key === "todo" ? todo.length : doing.length
-            const active = tab === key
-            const oc = active ? overdueCount : 0
+        {/* タブ行 */}
+        <div style={{ display:"flex", borderBottom:`1px solid ${C.whiteA08}` }}>
+          {([
+            ["todo",  "未着手", todo.length,  todoOD ] as const,
+            ["doing", "進行中", doing.length, doingOD] as const,
+          ]).map(([key, label, cnt, oc]) => {
+            const on = tab === key
             return (
-              <button key={key}
-                className={`tab-btn${active ? " active" : ""}`}
-                onClick={() => setTab(key)}
-              >
-                {label}
-                <span className="tab-count">{cnt}</span>
-                {oc > 0 && <span className="overdue-badge">!{oc}</span>}
+              <button key={key} onClick={() => setTab(key)} style={{
+                flex:1, border:"none", background:"transparent", cursor:"pointer",
+                padding:"14px 12px 12px", position:"relative",
+                WebkitTapHighlightColor:"transparent",
+              }}>
+                {/* アクティブ下線 */}
+                <div style={{
+                  position:"absolute", bottom:0, left:"18%", right:"18%",
+                  height:2, borderRadius:"2px 2px 0 0",
+                  background:"rgba(255,255,255,0.85)",
+                  transform: on ? "scaleX(1)" : "scaleX(0)",
+                  transition:"transform 0.28s cubic-bezier(.34,1.56,.64,1)",
+                }}/>
+                {/* 大きな数字 */}
+                <div style={{
+                  fontFamily:FD, fontWeight:800, fontSize:28, lineHeight:1,
+                  color: on ? C.white : C.whiteA30,
+                  transition:"color 0.2s",
+                  letterSpacing:"-0.03em",
+                }}>{cnt}</div>
+                {/* ラベル */}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:5, marginTop:4 }}>
+                  <span style={{
+                    fontSize:11, fontWeight:600, fontFamily:FB,
+                    color: on ? "rgba(255,255,255,0.7)" : C.whiteA30,
+                    transition:"color 0.2s",
+                  }}>{label}</span>
+                  {oc > 0 && on && (
+                    <span style={{
+                      fontSize:9, fontWeight:800, fontFamily:FD,
+                      background:C.danger, color:C.white,
+                      padding:"1px 5px", borderRadius:99,
+                      animation:"pulse 2s ease infinite",
+                    }}>!{oc}</span>
+                  )}
+                </div>
               </button>
             )
           })}
         </div>
 
-        {/* 行②：アクションボタン群 */}
-        <div className="action-row">
+        {/* アクション行 */}
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px" }}>
           {/* 完了一覧 */}
-          <Link href="/tasks/done/" className="btn-done">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <Link href="/tasks/done/" style={{
+            height:36, flexShrink:0,
+            display:"inline-flex", alignItems:"center", gap:5,
+            padding:"0 13px", borderRadius:10,
+            border:`1px solid ${C.whiteA30}`, background:C.whiteA08,
+            color:C.whiteA80, fontSize:12.5, fontWeight:600, fontFamily:FB,
+            textDecoration:"none", whiteSpace:"nowrap",
+            backdropFilter:"blur(6px)",
+            WebkitTapHighlightColor:"transparent",
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
             完了一覧
           </Link>
 
           {/* 新規タスク */}
-          <Link href="/tasks/new/" className="btn-new">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8">
+          <Link href="/tasks/new/" style={{
+            flex:1, height:36,
+            display:"inline-flex", alignItems:"center", justifyContent:"center", gap:6,
+            borderRadius:10, border:"none",
+            background:C.white, color:C.brand,
+            fontSize:13.5, fontWeight:800, fontFamily:FD,
+            textDecoration:"none", letterSpacing:"0.01em",
+            boxShadow:"0 2px 16px rgba(0,0,0,0.18)",
+            WebkitTapHighlightColor:"transparent",
+            transition:"transform 0.12s, opacity 0.12s",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -490,14 +471,16 @@ function BoardInner() {
           </Link>
 
           {/* 更新 */}
-          <button
-            className="icon-btn"
-            onClick={load}
-            disabled={loading}
-            style={{ opacity: loading ? 0.45 : 1, cursor: loading ? "default" : "pointer" }}
-            aria-label="更新"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="2.4"
+          <button onClick={load} disabled={loading} style={{
+            width:36, height:36, flexShrink:0,
+            borderRadius:10, border:`1px solid ${C.whiteA30}`,
+            background:C.whiteA08, backdropFilter:"blur(6px)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor: loading ? "default" : "pointer", opacity: loading ? 0.4 : 1,
+            WebkitTapHighlightColor:"transparent",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={C.whiteA80} strokeWidth="2.4"
               style={{ animation: loading ? "spin 0.7s linear infinite" : "none" }}>
               <polyline points="23 4 23 10 17 10"/>
               <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
@@ -505,140 +488,147 @@ function BoardInner() {
           </button>
 
           {/* フィルター */}
-          <button
-            className={`icon-btn${filterOpen || hasFilter ? " active-filter" : ""}`}
-            onClick={() => setFilterOpen(v => !v)}
-            aria-label="フィルター"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke={filterOpen || hasFilter ? C.brand : C.muted} strokeWidth="2.2">
+          <button onClick={() => setFilterOpen(v=>!v)} style={{
+            width:36, height:36, flexShrink:0, position:"relative",
+            borderRadius:10,
+            border:`1px solid ${filterOpen||hasFilter ? "rgba(255,255,255,0.55)" : C.whiteA30}`,
+            background: filterOpen||hasFilter ? C.whiteA30 : C.whiteA08,
+            backdropFilter:"blur(6px)",
+            display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
+            WebkitTapHighlightColor:"transparent",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={filterOpen||hasFilter ? C.white : C.whiteA50} strokeWidth="2.2">
               <line x1="4" y1="6" x2="20" y2="6"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
               <line x1="11" y1="18" x2="13" y2="18"/>
             </svg>
-            {hasFilter && <span className="filter-dot"/>}
+            {hasFilter && (
+              <span style={{
+                position:"absolute", top:6, right:6,
+                width:6, height:6, borderRadius:"50%",
+                background:C.brandLight, border:`1.5px solid ${C.header}`,
+              }}/>
+            )}
           </button>
         </div>
 
-        {/* 行③：フィルターパネル（アコーディオン） */}
+        {/* フィルタードロワー */}
         {filterOpen && (
-          <div className="filter-panel">
-            {/* キーワード検索 */}
-            <div style={{ position: "relative" }}>
-              <svg style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.4">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <div style={{
+            background:C.headerMid, borderTop:`1px solid ${C.whiteA08}`,
+            padding:"8px 12px 16px",
+            animation:"fadeSlide 0.2s cubic-bezier(.22,1,.36,1) both",
+          }}>
+            {/* キーワード */}
+            <div style={{ position:"relative", marginBottom:8 }}>
+              <svg style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
+                width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.4">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
-              <input
-                className="filter-input"
-                value={q}
-                onChange={e => setQ(e.target.value)}
-                placeholder="タイトル・カテゴリ・登録者で検索"
-                style={{ paddingLeft: 38 }}
+              <input className="fi" value={q} onChange={e=>setQ(e.target.value)} placeholder="検索..."
+                style={{
+                  height:40, width:"100%", paddingLeft:36, paddingRight:14,
+                  borderRadius:10, border:`1px solid ${C.whiteA30}`,
+                  background:C.whiteA08, color:C.white, fontSize:13.5, fontFamily:FB,
+                  backdropFilter:"blur(6px)", outline:"none",
+                }}
               />
             </div>
-
-            {/* 登録者 ＋ カテゴリ */}
-            <div className="filter-row">
-              <input
-                className="filter-input"
-                value={creator}
-                onChange={e => setCreator(e.target.value)}
-                placeholder="登録者"
+            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+              <input className="fi" value={creator} onChange={e=>setCreator(e.target.value)} placeholder="登録者"
+                style={{
+                  flex:1, height:40, padding:"0 13px",
+                  borderRadius:10, border:`1px solid ${C.whiteA30}`,
+                  background:C.whiteA08, color:C.white, fontSize:13.5, fontFamily:FB,
+                  backdropFilter:"blur(6px)", outline:"none",
+                }}
               />
-              <div style={{ flex: 1.2, position: "relative" }}>
-                <select
-                  className="filter-input"
-                  value={mainId}
-                  onChange={e => setMainId(Number(e.target.value))}
-                  style={{ cursor: "pointer", color: mainId ? C.text : C.muted, paddingRight: 32 }}
-                >
+              <div style={{ flex:1.3, position:"relative" }}>
+                <select className="fi" value={mainId} onChange={e=>setMainId(Number(e.target.value))} style={{
+                  width:"100%", height:40, padding:"0 30px 0 13px",
+                  borderRadius:10, border:`1px solid ${C.whiteA30}`,
+                  background:C.whiteA08, color: mainId ? C.white : "rgba(255,255,255,0.38)",
+                  fontSize:13.5, fontFamily:FB,
+                  backdropFilter:"blur(6px)", outline:"none", cursor:"pointer",
+                }}>
                   <option value={0}>カテゴリ：全て</option>
                   {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <svg style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.5">
+                <svg style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
+                  width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
             </div>
-
             {/* 期限超過トグル */}
             <label style={{
-              display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-              userSelect: "none", fontSize: 13, fontFamily: FB,
-              color: onlyOverdue ? C.danger : C.sub,
-              fontWeight: onlyOverdue ? 600 : 400,
+              display:"flex", alignItems:"center", gap:10, cursor:"pointer",
+              userSelect:"none", fontSize:12.5, fontFamily:FB,
+              color: onlyOverdue ? "#ff8888" : "rgba(255,255,255,0.45)",
             }}>
-              <button
-                type="button"
-                className="toggle-track"
-                onClick={() => setOnlyOverdue(v => !v)}
-                style={{ background: onlyOverdue ? "#f5c6c6" : C.line }}
-              >
-                <span
-                  className="toggle-thumb"
-                  style={{ left: onlyOverdue ? 21 : 3, background: onlyOverdue ? C.danger : "#fff" }}
-                />
+              <button type="button" onClick={()=>setOnlyOverdue(v=>!v)} style={{
+                position:"relative", width:40, height:22, borderRadius:99,
+                border:"none", padding:0, cursor:"pointer", flexShrink:0,
+                background: onlyOverdue ? "rgba(224,82,82,0.55)" : C.whiteA15,
+                transition:"background 0.22s",
+              }}>
+                <span style={{
+                  position:"absolute", top:3,
+                  left: onlyOverdue ? 21 : 3,
+                  width:16, height:16, borderRadius:"50%",
+                  background: onlyOverdue ? C.danger : "rgba(255,255,255,0.65)",
+                  boxShadow:"0 1px 4px rgba(0,0,0,0.25)",
+                  transition:"left 0.22s cubic-bezier(.34,1.56,.64,1)",
+                  display:"block",
+                }}/>
               </button>
-              期限超過のみ表示
+              期限超過のみ
             </label>
           </div>
         )}
       </div>
 
-      {/* ══════════════════════════════════════
-          コンテンツ
-      ══════════════════════════════════════ */}
-      <div style={{ padding: "16px 14px 40px" }}>
+      {/* ━━ コンテンツ ━━ */}
+      <div style={{ padding:"16px 14px 48px" }}>
+        {error && <ErrorBar msg={error}/>}
 
-        {/* エラー */}
-        {error && (
-          <div className="error-bar">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            {error}
-          </div>
-        )}
-
-        {/* ローディング */}
         {loading && list.length === 0 && (
-          <div style={{ padding: "80px 0", textAlign: "center", color: C.muted, fontSize: 13, fontFamily: FB }}>
-            <div className="spinner"/>
+          <div style={{ padding:"80px 0", textAlign:"center", color:C.muted, fontSize:13 }}>
+            <div style={{
+              width:34, height:34, borderRadius:"50%", margin:"0 auto 14px",
+              border:`2.5px solid ${C.brandPale}`, borderTopColor:C.brand,
+              animation:"spin 0.7s linear infinite",
+            }}/>
             読み込み中...
           </div>
         )}
 
-        {/* 空状態 */}
         {!loading && list.length === 0 && (
-          <div style={{ padding: "80px 0", textAlign: "center" }}>
-            <div className="empty-icon">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="1.6">
+          <div style={{ padding:"80px 0", textAlign:"center" }}>
+            <div style={{
+              width:56, height:56, borderRadius:18,
+              background:`linear-gradient(135deg, ${C.brandPale}, ${C.bg})`,
+              border:`1px solid ${C.line}`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              margin:"0 auto 18px",
+              boxShadow:`0 4px 20px rgba(0,98,132,0.08)`,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="1.6">
                 <rect x="3" y="3" width="7" height="7" rx="1.5"/>
                 <rect x="14" y="3" width="7" height="7" rx="1.5"/>
                 <rect x="3" y="14" width="7" height="7" rx="1.5"/>
                 <rect x="14" y="14" width="7" height="7" rx="1.5"/>
               </svg>
             </div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: C.sub, fontFamily: FH }}>
-              タスクがありません
-            </p>
-            <p style={{ marginTop: 6, fontSize: 12.5, color: C.muted, fontFamily: FB }}>
-              条件を変えてみてください
-            </p>
+            <p style={{ fontSize:15, fontWeight:700, color:C.sub, fontFamily:FD, margin:0 }}>タスクがありません</p>
+            <p style={{ marginTop:6, fontSize:12.5, color:C.muted }}>条件を変えてみてください</p>
           </div>
         )}
 
-        {/* カードリスト */}
         {list.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-            {list.map((t, i) => (
-              <TaskCard key={t.id} task={t} index={i} />
-            ))}
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {list.map((t, i) => <TaskCard key={t.id} task={t} index={i}/>)}
           </div>
         )}
       </div>
@@ -646,4 +636,4 @@ function BoardInner() {
   )
 }
 
-export default function TasksPage() { return <Guard><BoardInner /></Guard> }
+export default function TasksPage() { return <Guard><BoardInner/></Guard> }
