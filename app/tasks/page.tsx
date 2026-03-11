@@ -8,18 +8,18 @@ import { toUserMessage } from "@/lib/errors"
 import { board, listMainCategories, type MainCategory, type TaskCard as T } from "@/lib/tasks"
 
 const C = {
-  bg:       "#f0f5f7",
-  surface:  "#ffffff",
-  brand:    "#006284",
-  brandMid: "#004d66",
-  brandPale:"#e0f0f5",
-  text:     "#0d1f26",
-  sub:      "#4a7a8a",
-  muted:    "#8aacb5",
-  line:     "#d4e8ee",
-  danger:   "#c0392b",
-  dangerBg: "#fdf2f2",
-  dangerLine:"#e8b4b4",
+  bg:         "#f0f5f7",
+  surface:    "#ffffff",
+  brand:      "#006284",
+  brandMid:   "#004d66",
+  brandPale:  "#e0f0f5",
+  text:       "#0d1f26",
+  sub:        "#4a7a8a",
+  muted:      "#8aacb5",
+  line:       "#d4e8ee",
+  danger:     "#c0392b",
+  dangerBg:   "#fdf2f2",
+  dangerLine: "#e8b4b4",
 } as const
 
 const FH = `'Outfit', 'Noto Sans JP', sans-serif`
@@ -42,57 +42,75 @@ function TaskCard({ task }: { task: T }) {
   const due = fmtDue(task.due_date)
 
   return (
-    <Link href={`/task/?id=${task.id}`} style={{ textDecoration: "none", color: "inherit" }}
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+    <Link
+      href={`/task/?id=${task.id}`}
+      style={{ textDecoration: "none", color: "inherit", display: "block" }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
       <article style={{
         background: C.surface,
-        borderRadius: 10,
+        borderRadius: 16,
         border: `1px solid ${overdue ? C.dangerLine : hover ? C.brand : C.line}`,
-        borderTop: `2.5px solid ${overdue ? C.danger : hover ? C.brand : C.line}`,
-        padding: "18px 20px 16px",
+        borderLeft: `4px solid ${overdue ? C.danger : hover ? C.brand : C.brandPale}`,
+        padding: "16px 16px 14px",
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        gap: 10,
         cursor: "pointer",
-        transition: "border-color 0.15s, box-shadow 0.15s, transform 0.12s",
-        boxShadow: hover ? "0 6px 20px rgba(0,98,132,0.12)" : "0 1px 4px rgba(0,98,132,0.06)",
-        transform: hover ? "translateY(-1px)" : "none",
+        transition: "border-color 0.18s, box-shadow 0.18s",
+        boxShadow: hover
+          ? `0 6px 24px rgba(0,98,132,0.12)`
+          : `0 1px 3px rgba(0,98,132,0.06)`,
+        WebkitTapHighlightColor: "transparent",
       }}>
-        {/* カテゴリ */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.brand, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: C.brand, letterSpacing: "0.07em", textTransform: "uppercase", fontFamily: FH }}>
+
+        {/* カテゴリ + 期日 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: C.brand,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            fontFamily: FH, lineHeight: 1,
+          }}>
             {task.main_category_name}
           </span>
-        </div>
 
-        {/* タイトル */}
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.text, lineHeight: 1.5, fontFamily: FB }}>
-          {task.title}
-        </p>
-
-        {/* フッター */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
-          {/* 登録者 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.brandPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: C.brand, flexShrink: 0 }}>
-              {(task.created_by_name ?? "?")[0]}
-            </div>
-            <span style={{ fontSize: 12, color: C.sub, fontFamily: FB }}>{task.created_by_name}</span>
-          </div>
-
-          {/* 期日 */}
           {due && (
             <span style={{
-              fontSize: 12, fontWeight: 700, fontFamily: FH,
+              fontSize: 11, fontWeight: 700, fontFamily: FH,
               color: overdue ? C.danger : C.sub,
               background: overdue ? C.dangerBg : C.brandPale,
               border: `1px solid ${overdue ? C.dangerLine : C.line}`,
-              padding: "2px 9px", borderRadius: 5,
+              padding: "2px 8px", borderRadius: 99,
+              display: "flex", alignItems: "center", gap: 3,
+              flexShrink: 0,
             }}>
-              {overdue && "! "}{due}
+              {overdue && "⚠ "}{due}
             </span>
           )}
+        </div>
+
+        {/* タイトル */}
+        <p style={{
+          margin: 0, fontSize: 14, fontWeight: 700,
+          color: C.text, lineHeight: 1.55, fontFamily: FB,
+        }}>
+          {task.title}
+        </p>
+
+        {/* 登録者 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{
+            width: 20, height: 20, borderRadius: "50%",
+            background: `linear-gradient(135deg, ${C.brand}, ${C.brandMid})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 9, fontWeight: 800, color: "#fff", flexShrink: 0,
+          }}>
+            {(task.created_by_name ?? "?")[0]}
+          </div>
+          <span style={{ fontSize: 11.5, color: C.muted, fontFamily: FB }}>
+            {task.created_by_name}
+          </span>
         </div>
       </article>
     </Link>
@@ -110,6 +128,7 @@ function BoardInner() {
   const [mainId, setMainId] = useState<number>(0)
   const [creator, setCreator] = useState("")
   const [onlyOverdue, setOnlyOverdue] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   async function load() {
     setError(null); setLoading(true)
@@ -139,167 +158,289 @@ function BoardInner() {
     })
   }, [tab, todo, doing, q, mainId, creator, onlyOverdue])
 
-  const overdueCount = list.filter(t => isOverdue(t.due_date)).length
+  const overdueCount = (tab === "todo" ? todo : doing).filter(t => isOverdue(t.due_date)).length
+  const hasFilter = !!q || !!creator || !!mainId || onlyOverdue
 
-  /* 共通 input スタイル */
   const inp: React.CSSProperties = {
-    height: 36, padding: "0 12px",
-    background: C.surface,
-    border: `1px solid ${C.line}`,
-    borderRadius: 7,
-    color: C.text, fontSize: 13, fontFamily: FB,
-    outline: "none",
+    height: 44, padding: "0 14px",
+    background: C.bg,
+    border: `1.5px solid ${C.line}`,
+    borderRadius: 10,
+    color: C.text, fontSize: 14, fontFamily: FB,
+    outline: "none", width: "100%",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, padding: "32px 28px 80px" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: FB }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap');
         * { box-sizing: border-box; }
         ::placeholder { color: ${C.muted}; }
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
-        .up { animation: up .25s ease both }
-        select option { background: ${C.surface}; color: ${C.text} }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
+        .up { animation: up .24s cubic-bezier(.22,1,.36,1) both }
+        select option { background: #fff; color: ${C.text} }
+        input:focus, select:focus {
+          border-color: ${C.brand} !important;
+          box-shadow: 0 0 0 3px rgba(0,98,132,0.1) !important;
+        }
+        .bottom-nav {
+          position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+          background: ${C.surface};
+          border-top: 1px solid ${C.line};
+          display: flex; align-items: stretch;
+          padding-bottom: env(safe-area-inset-bottom);
+          box-shadow: 0 -4px 20px rgba(0,98,132,0.08);
+        }
+        .nav-btn {
+          flex: 1; display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          gap: 3px; padding: 10px 8px;
+          background: none; border: none; cursor: pointer;
+          color: ${C.muted}; font-size: 10px; font-family: ${FB};
+          -webkit-tap-highlight-color: transparent;
+          transition: color 0.15s;
+          text-decoration: none;
+        }
+        .nav-btn-new {
+          flex: 1.4; margin: 8px 12px;
+          display: flex; align-items: center; justify-content: center; gap: 6px;
+          background: linear-gradient(135deg, ${C.brand}, ${C.brandMid});
+          border: none; border-radius: 14px; cursor: pointer;
+          color: #fff; font-size: 13px; font-weight: 700; font-family: ${FH};
+          box-shadow: 0 4px 16px rgba(0,98,132,0.35);
+          -webkit-tap-highlight-color: transparent;
+          text-decoration: none;
+        }
       `}</style>
 
-      <div style={{ maxWidth: 920, margin: "0 auto" }}>
-
-        {/* ═══ ページヘッダー ═══ */}
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 36, gap: 16, flexWrap: "wrap" }}>
-          <div>
-            {/* ロゴライン */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-                </svg>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.brand, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: FH }}>Task Board</span>
-            </div>
-            <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: C.text, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: FH }}>
-              タスク管理
-            </h1>
-            {/* カウンター */}
-            <div style={{ marginTop: 10, display: "flex", gap: 0 }}>
-              {[
-                { label: "未着手", val: todo.length, active: tab === "todo" },
-                { label: "進行中", val: doing.length, active: tab === "doing" },
-                ...(overdueCount > 0 ? [{ label: "期限超過", val: overdueCount, danger: true, active: false }] : []),
-              ].map((s, i, a) => (
-                <div key={s.label} style={{
-                  padding: "6px 16px",
-                  borderTop: `2px solid ${"danger" in s && s.danger ? C.danger : s.active ? C.brand : "transparent"}`,
-                  borderRight: i < a.length - 1 ? `1px solid ${C.line}` : "none",
-                }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "danger" in s && s.danger ? C.danger : s.active ? C.brand : C.sub, fontFamily: FH, lineHeight: 1 }}>{s.val}</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 2, fontFamily: FB }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* アクションボタン */}
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link href="/tasks/done/" style={{ height: 38, display: "inline-flex", alignItems: "center", gap: 6, padding: "0 16px", borderRadius: 8, border: `1px solid ${C.line}`, background: C.surface, color: C.sub, fontSize: 13, fontWeight: 600, textDecoration: "none", fontFamily: FB, whiteSpace: "nowrap" }}>
-              完了一覧
-            </Link>
-            <Link href="/tasks/new/" style={{ height: 38, display: "inline-flex", alignItems: "center", gap: 7, padding: "0 18px", borderRadius: 8, background: C.brand, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", fontFamily: FH, whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,98,132,0.25)" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              新規タスク
-            </Link>
-          </div>
-        </header>
-
-        {/* ═══ タブ + 更新 ═══ */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ display: "flex", borderBottom: `2px solid ${C.line}`, gap: 0 }}>
-            {([["todo","未着手"], ["doing","進行中"]] as const).map(([key, label]) => (
+      {/* ── スティッキートップバー ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: C.surface,
+        borderBottom: `1px solid ${C.line}`,
+        boxShadow: "0 2px 12px rgba(0,98,132,0.06)",
+      }}>
+        {/* タブ行 */}
+        <div style={{ display: "flex", alignItems: "center", padding: "0 4px" }}>
+          {([["todo","未着手"] as const, ["doing","進行中"] as const]).map(([key, label]) => {
+            const count = key === "todo" ? todo.length : doing.length
+            const active = tab === key
+            return (
               <button key={key} onClick={() => setTab(key)} style={{
-                padding: "10px 22px",
-                border: "none", borderBottom: `2px solid ${tab === key ? C.brand : "transparent"}`,
-                marginBottom: -2,
+                flex: 1, padding: "14px 8px 12px",
+                border: "none", borderBottom: `2.5px solid ${active ? C.brand : "transparent"}`,
                 background: "transparent",
-                color: tab === key ? C.brand : C.muted,
-                fontSize: 13, fontWeight: tab === key ? 700 : 500,
+                color: active ? C.brand : C.muted,
+                fontSize: 13, fontWeight: active ? 700 : 500,
                 cursor: "pointer", fontFamily: FB,
                 transition: "color 0.15s, border-color 0.15s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
               }}>
                 {label}
-                <span style={{ marginLeft: 8, padding: "1px 8px", borderRadius: 999, background: tab === key ? C.brandPale : C.bg, color: tab === key ? C.brand : C.muted, fontSize: 11, fontWeight: 700, fontFamily: FH }}>
-                  {key === "todo" ? todo.length : doing.length}
+                <span style={{
+                  fontSize: 11, fontWeight: 700, fontFamily: FH,
+                  padding: "1px 7px", borderRadius: 99,
+                  background: active ? C.brandPale : C.bg,
+                  color: active ? C.brand : C.muted,
+                }}>
+                  {count}
                 </span>
+                {active && overdueCount > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    padding: "1px 6px", borderRadius: 99,
+                    background: C.dangerBg, color: C.danger,
+                    border: `1px solid ${C.dangerLine}`,
+                  }}>
+                    !{overdueCount}
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
+            )
+          })}
 
-          <button onClick={load} disabled={loading} style={{ ...inp, display: "flex", alignItems: "center", gap: 6, cursor: loading ? "default" : "pointer", opacity: loading ? 0.5 : 1, paddingLeft: 12, paddingRight: 14 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="2.5"
-              style={{ animation: loading ? "spin 0.8s linear infinite" : "none" }}>
-              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-            </svg>
-            <span style={{ color: C.sub }}>更新</span>
-          </button>
-        </div>
-
-        {/* ═══ フィルターバー ═══ */}
-        <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-          {/* 検索 */}
-          <div style={{ flex: "2 1 200px", position: "relative" }}>
-            <svg style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="タイトル / カテゴリ / 登録者"
-              style={{ ...inp, width: "100%", paddingLeft: 32 }} />
-          </div>
-          <input value={creator} onChange={e => setCreator(e.target.value)} placeholder="登録者"
-            style={{ ...inp, flex: "1 1 130px" }} />
-          <select value={mainId} onChange={e => setMainId(Number(e.target.value))}
-            style={{ ...inp, flex: "1 1 150px", cursor: "pointer", color: mainId ? C.text : C.muted }}>
-            <option value={0}>カテゴリ：全て</option>
-            {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-
-          {/* 期限超過トグル */}
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", fontSize: 13, fontFamily: FB, color: onlyOverdue ? C.danger : C.sub, fontWeight: onlyOverdue ? 700 : 400 }}>
-            <button type="button" onClick={() => setOnlyOverdue(v => !v)} style={{
-              position: "relative", width: 34, height: 18, borderRadius: 999, border: "none", padding: 0,
-              background: onlyOverdue ? "#f5c6c6" : C.line, cursor: "pointer", transition: "background 0.2s", flexShrink: 0,
+          {/* アイコンボタン群 */}
+          <div style={{ display: "flex", gap: 2, padding: "0 8px" }}>
+            <button onClick={load} disabled={loading} style={{
+              width: 38, height: 38, borderRadius: 10,
+              border: "none", background: "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: loading ? "default" : "pointer",
+              opacity: loading ? 0.4 : 1,
             }}>
-              <span style={{ position: "absolute", top: 2, left: onlyOverdue ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: onlyOverdue ? C.danger : C.muted, transition: "left 0.2s, background 0.2s", display: "block" }} />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="2.5"
+                style={{ animation: loading ? "spin 0.8s linear infinite" : "none" }}>
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+              </svg>
             </button>
-            期限超過のみ
-          </label>
+
+            <button onClick={() => setFilterOpen(v => !v)} style={{
+              width: 38, height: 38, borderRadius: 10,
+              border: "none",
+              background: filterOpen || hasFilter ? C.brandPale : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", position: "relative",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke={filterOpen || hasFilter ? C.brand : C.muted} strokeWidth="2.2">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+                <line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              {hasFilter && (
+                <span style={{
+                  position: "absolute", top: 6, right: 6,
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: C.brand, border: `1.5px solid ${C.surface}`,
+                }} />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* ═══ エラー ═══ */}
+        {/* フィルターパネル（アコーディオン） */}
+        {filterOpen && (
+          <div style={{
+            padding: "12px 16px 16px",
+            borderTop: `1px solid ${C.line}`,
+            display: "flex", flexDirection: "column", gap: 10,
+            animation: "slideDown 0.2s ease both",
+            background: C.surface,
+          }}>
+            <div style={{ position: "relative" }}>
+              <svg style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input value={q} onChange={e => setQ(e.target.value)}
+                placeholder="タイトル・カテゴリ・登録者で検索"
+                style={{ ...inp, paddingLeft: 38 }} />
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <input value={creator} onChange={e => setCreator(e.target.value)}
+                placeholder="登録者"
+                style={{ ...inp, flex: 1 }} />
+              <select value={mainId} onChange={e => setMainId(Number(e.target.value))}
+                style={{ ...inp, flex: 1.2, cursor: "pointer", color: mainId ? C.text : C.muted }}>
+                <option value={0}>カテゴリ：全て</option>
+                {mainCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            <label style={{
+              display: "flex", alignItems: "center", gap: 10,
+              cursor: "pointer", userSelect: "none",
+              fontSize: 13, fontFamily: FB,
+              color: onlyOverdue ? C.danger : C.sub,
+              fontWeight: onlyOverdue ? 700 : 400,
+            }}>
+              <button type="button" onClick={() => setOnlyOverdue(v => !v)} style={{
+                position: "relative", width: 40, height: 22, borderRadius: 999,
+                border: "none", padding: 0,
+                background: onlyOverdue ? "#f5c6c6" : C.line,
+                cursor: "pointer", transition: "background 0.2s", flexShrink: 0,
+              }}>
+                <span style={{
+                  position: "absolute", top: 3, left: onlyOverdue ? 19 : 3,
+                  width: 16, height: 16, borderRadius: "50%",
+                  background: onlyOverdue ? C.danger : "#fff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                  transition: "left 0.2s, background 0.2s", display: "block",
+                }} />
+              </button>
+              期限超過のみ表示
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* ── コンテンツエリア ── */}
+      <div style={{ padding: "16px 14px 100px" }}>
+
         {error && (
-          <div style={{ background: C.dangerBg, border: `1px solid ${C.dangerLine}`, borderRadius: 8, padding: "11px 16px", color: C.danger, fontSize: 13, marginBottom: 16, fontFamily: FB }}>
+          <div style={{
+            background: C.dangerBg, border: `1px solid ${C.dangerLine}`,
+            borderRadius: 10, padding: "12px 14px",
+            color: C.danger, fontSize: 13, marginBottom: 14,
+            fontFamily: FB, display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             {error}
           </div>
         )}
 
-        {/* ═══ カードグリッド ═══ */}
         {loading && list.length === 0 ? (
-          <div style={{ padding: "80px 0", textAlign: "center", color: C.muted, fontSize: 14, fontFamily: FB }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="2" style={{ animation: "spin 0.8s linear infinite", display: "block", margin: "0 auto 12px" }}><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+          <div style={{ padding: "80px 0", textAlign: "center", color: C.muted, fontSize: 14 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              border: `3px solid ${C.brandPale}`, borderTopColor: C.brand,
+              animation: "spin 0.8s linear infinite", margin: "0 auto 14px",
+            }} />
             読み込み中...
           </div>
         ) : list.length === 0 ? (
-          <div style={{ padding: "80px 0", textAlign: "center", color: C.muted, fontFamily: FB }}>
-            <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.3, color: C.brand }}>—</div>
+          <div style={{ padding: "80px 0", textAlign: "center" }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 18, background: C.brandPale,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.brand} strokeWidth="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </div>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: C.sub }}>該当タスクがありません</p>
-            <p style={{ margin: "6px 0 0", fontSize: 13 }}>条件を変えてみてください</p>
+            <p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted }}>条件を変えてみてください</p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {list.map((t, i) => (
-              <div key={t.id} className="up" style={{ animationDelay: `${Math.min(i * 30, 240)}ms` }}>
+              <div key={t.id} className="up" style={{ animationDelay: `${Math.min(i * 25, 200)}ms` }}>
                 <TaskCard task={t} />
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* ── ボトムナビゲーション ── */}
+      <nav className="bottom-nav">
+        <Link href="/tasks/done/" className="nav-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          完了一覧
+        </Link>
+
+        <Link href="/tasks/new/" className="nav-btn-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          新規タスク
+        </Link>
+
+        <button className="nav-btn" onClick={load} disabled={loading} style={{ opacity: loading ? 0.4 : 1 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ animation: loading ? "spin 0.8s linear infinite" : "none" }}>
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          更新
+        </button>
+      </nav>
     </div>
   )
 }
