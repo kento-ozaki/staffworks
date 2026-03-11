@@ -20,8 +20,8 @@ const PAGE_CSS = `
   to   { transform: translateY(0);    opacity: 1;   }
 }
 @keyframes _overlayIn { from { opacity: 0; } to { opacity: 1; } }
-.sheet      { animation: _sheetUp   0.32s cubic-bezier(.22,1,.36,1) both; }
-.overlay-in { animation: _overlayIn 0.22s ease both; }
+.sheet-wrap  { animation: _sheetUp   0.32s cubic-bezier(.22,1,.36,1) both; }
+.overlay-in  { animation: _overlayIn 0.22s ease both; }
 `
 
 /* ── StatusBadge ── */
@@ -103,9 +103,9 @@ function TLRow({ ev, last, nameMap }: { ev:TaskEvent; last:boolean; nameMap:Map<
   )
 }
 
-/* ══════════════════════════════════════════════════════
+/* ======================================================
    ProgressSheet
-══════════════════════════════════════════════════════ */
+/* ---------------- */
 interface SheetProps {
   openSubs: TaskDetailSub[]
   loading:  boolean
@@ -141,12 +141,17 @@ function ProgressSheet({ openSubs, loading, error, onClose, onSubmit }: SheetPro
         background:"rgba(15,32,40,0.45)",
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
-      <div className="sheet" style={{
-        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", zIndex:400,
+      <div className="sheet-wrap" style={{
+        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
+        display:"flex", justifyContent:"center", alignItems:"flex-end",
+        pointerEvents:"none",
+      }}>
+      <div style={{
         width:"100%", maxWidth:"47.9375rem", minWidth:"320px",
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
         maxHeight:"88vh", display:"flex", flexDirection:"column", overflow:"hidden",
+        pointerEvents:"auto",
       }}>
         {/* ヘッダー */}
         <div style={{ padding:"10px 18px 14px", borderBottom:`1px solid ${C.strokeSoft}`, flexShrink:0 }}>
@@ -288,13 +293,11 @@ function ProgressSheet({ openSubs, loading, error, onClose, onSubmit }: SheetPro
           </button>
         </div>
       </div>
+      </div>
     </>
   )
 }
-
-/* ══════════════════════════════════════════════════════
-   EditSheet（管理者）
-══════════════════════════════════════════════════════ */
+/* ---------------- */
 interface EditSheetProps {
   task:    any
   loading: boolean
@@ -319,12 +322,17 @@ function EditSheet({ task, loading, error, onClose, onSave }: EditSheetProps) {
         background:"rgba(15,32,40,0.45)",
         backdropFilter:"blur(3px)", WebkitBackdropFilter:"blur(3px)",
       }}/>
-      <div className="sheet" style={{
-        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", zIndex:400,
+      <div className="sheet-wrap" style={{
+        position:"fixed", bottom:0, left:0, right:0, zIndex:400,
+        display:"flex", justifyContent:"center", alignItems:"flex-end",
+        pointerEvents:"none",
+      }}>
+      <div style={{
         width:"100%", maxWidth:"47.9375rem", minWidth:"320px",
         background:C.surface, borderRadius:"22px 22px 0 0",
         boxShadow:"0 -8px 40px rgba(0,98,132,0.18)",
         maxHeight:"85vh", display:"flex", flexDirection:"column", overflow:"hidden",
+        pointerEvents:"auto",
       }}>
         <div style={{ padding:"10px 18px 14px", borderBottom:`1px solid ${C.strokeSoft}`, flexShrink:0 }}>
           <div style={{ width:40, height:4, borderRadius:99, background:C.stroke, margin:"0 auto 14px" }}/>
@@ -374,13 +382,11 @@ function EditSheet({ task, loading, error, onClose, onSave }: EditSheetProps) {
           }}>変更を保存する</button>
         </div>
       </div>
+      </div>
     </>
   )
 }
-
-/* ══════════════════════════════════════════════════════
-   TaskPageInner
-══════════════════════════════════════════════════════ */
+/* ---------------- */
 function TaskPageInner() {
   const router = useRouter()
   const sp     = useSearchParams()
@@ -522,7 +528,7 @@ function TaskPageInner() {
           </div>
         ) : (<>
 
-          {/* ═══ タスク情報 ═══ */}
+          {/* === タスク情報 === */}
           <div style={{
             background:C.surface, borderRadius:18,
             border:`1px solid ${C.stroke}`,
@@ -585,7 +591,7 @@ function TaskPageInner() {
             )}
           </div>
 
-          {/* ═══ サブカテゴリ ═══ */}
+          {/* === サブカテゴリ === */}
           {subs.length > 0 && (
             <div style={{
               background:C.surface, borderRadius:16,
@@ -631,7 +637,7 @@ function TaskPageInner() {
             </div>
           )}
 
-          {/* ═══ 履歴 ═══ */}
+          {/* === 履歴 === */}
           <div style={{
             background:C.surface, borderRadius:16,
             border:`1px solid ${C.stroke}`,
